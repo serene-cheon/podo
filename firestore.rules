@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    match /rooms/{roomId} {
+      // 방 코드를 아는 사람은 참여 전에 방 이름/목표를 미리 볼 수 있음
+      allow get: if signedIn();
+      // 목록 조회는 내가 속한 방만
+      allow list: if signedIn() && me() in resource.data.memberIds;
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == me()
+        && request.resource.data.memberIds == [me()]
+        && request.resource.data.name is string && request.resource.data.name.size() <= 30
+        && request.resource.data.goal is string && request.resource.data.goal.size() <= 40
+        && request.resource.data.target is int
+        && request.resource.data.target >= 1 && request.resource.data.target <= 7;
+
+      // 참여: 나 자신만 멤버로 추가 가능 (최대 20명)
+      allow update: if signedIn()
+        && !(me() in resource.data.memberIds)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'members'])
+        && request.resource.data.memberIds == resource.data.memberIds.concat([me()])
+        && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([me()])
+        && request.resource.data.memberIds.size() <= 20;
+
+      match /checkins/{checkinId} {
+        function isMember() {
+          return me() in get(/databases/$(database)/documents/rooms/$(roomId)).data.memberIds;
+        }
+        allow read: if signedIn() && isMember();
+        allow create: if signedIn() && isMember()
+          && request.resource.data.uid == me()
+          && request.resource.data.keys().hasOnly(['uid', 'week', 'createdAt', 'mediaType', 'mediaUrl', 'mediaPath', 'note'])
+          && request.resource.data.week is string
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.note.size() <= 60;
+        allow delete: if signedIn() && resource.data.uid == me();
+      }
+    }
+  }
+}

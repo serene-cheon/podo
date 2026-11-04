@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isMember(roomId) {
+      return request.auth.uid in firestore.get(/databases/(default)/documents/rooms/$(roomId)).data.memberIds;
+    }
+    // rooms/{방코드}/{내 uid}/{파일}
+    match /rooms/{roomId}/{uid}/{file} {
+      allow read: if request.auth != null && isMember(roomId);
+      allow create: if request.auth != null && request.auth.uid == uid && isMember(roomId)
+        && request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('(image|video)/.*');
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
