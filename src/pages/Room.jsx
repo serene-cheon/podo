@@ -100,7 +100,10 @@ export default function Room({ api, user, id }) {
   if (!isMember) return null
 
   const memberOf = (uid) => room.members[uid]
-  const pct = total ? Math.round((done / total) * 100) : 0
+  // 팀 송이: 각자 목표 개수까지만, 붙인 시간순으로 채움
+  const teamFilled = members
+    .flatMap((m) => (byUser[m.uid] || []).slice(0, target))
+    .sort((a, b) => a.createdAt - b.createdAt)
 
   return (
     <main className="page room">
@@ -118,46 +121,50 @@ export default function Room({ api, user, id }) {
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="Next week">›</button>
       </nav>
 
-      <section className={`team ${done >= total ? 'complete' : ''}`}>
+      <section className={`team-bunch ${done >= total ? 'complete' : ''}`}>
         <div className="team-row">
-          <b>{done >= total ? '🎉 Team bunch complete!' : 'Team grapes'}</b>
+          <b>{done >= total ? '🎉 Team bunch complete!' : 'Our team bunch'}</b>
           <span><b>{done}</b> / {total}</span>
         </div>
-        <div className="bar"><span style={{ width: `${pct}%` }} /></div>
-        {isCurrent && done < total && <small className="muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · let's fill it together</small>}
-      </section>
-
-      <section className="me">
         <GrapeCluster
-          target={target}
-          checkins={mine}
-          size={1.6}
-          canAdd={isCurrent && !busy}
+          target={total}
+          checkins={teamFilled}
+          size={1.4}
+          maxWidth={300}
+          meUid={user.uid}
+          labelOf={(uid) => room.members[uid]?.name}
+          canAdd={isCurrent && !busy && mine.length < target}
           onAdd={() => setAddOpen(true)}
           onOpen={setViewing}
         />
+        <div className="legend">
+          <span><i className="dot me" /> You</span>
+          <span><i className="dot other" /> Friends</span>
+        </div>
         <p className="me-label">
           {busy ? 'Adding…'
-            : mine.length >= target ? 'Your bunch is done this week 🍇'
-            : isCurrent ? `Tap + to add a grape (${mine.length}/${target})`
-            : `${mine.length}/${target}`}
+            : !isCurrent ? `You added ${Math.min(mine.length, target)}/${target}`
+            : mine.length >= target ? `You're done this week 🍇 (${target}/${target})`
+            : `Tap + to add your grape · You ${mine.length}/${target}`}
         </p>
+        {isCurrent && done < total && <small className="muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · let's fill it together</small>}
       </section>
 
-      {members.length > 1 && (
-        <section className="friends">
-          {members.slice(1).map((m) => {
-            const list = byUser[m.uid] || []
-            return (
-              <div key={m.uid} className={`friend ${list.length >= target ? 'done' : ''}`}>
-                <GrapeCluster target={target} checkins={list} size={0.7} onOpen={setViewing} />
-                <div className="friend-name"><Avatar {...m} size={20} /> {m.name}</div>
-                <small className="muted">{Math.min(list.length, target)}/{target}</small>
-              </div>
-            )
-          })}
-        </section>
-      )}
+      <section className="members">
+        {members.map((m) => {
+          const n = Math.min(byUser[m.uid]?.length || 0, target)
+          return (
+            <div key={m.uid} className={`member ${m.uid === user.uid ? 'is-me' : ''} ${n >= target ? 'done' : ''}`}>
+              <Avatar {...m} size={24} />
+              <span className="member-name">{m.uid === user.uid ? 'You' : m.name}</span>
+              <span className="member-dots">
+                {Array.from({ length: target }, (_, i) => <i key={i} className={i < n ? 'on' : ''} />)}
+              </span>
+              <small>{n}/{target}</small>
+            </div>
+          )
+        })}
+      </section>
 
       {moments.length > 0 && (
         <section>

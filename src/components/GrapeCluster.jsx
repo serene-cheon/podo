@@ -33,7 +33,10 @@ function layout(target) {
  * checkins: 이 사람의 이번 주 체크인(시간순). 앞에서부터 포도알을 채웁니다.
  * canAdd: 다음 빈 포도알을 눌러 붙일 수 있는지 (내 송이 + 이번 주)
  */
-export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen }) {
+/**
+ * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 진한 보라 + "Me", 친구 알은 연보라 + 이름 첫 글자
+ */
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen, meUid, labelOf }) {
   const gid = useId().replace(/:/g, '')
   const { pts, width, height } = layout(target)
   if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
@@ -68,6 +71,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           <stop offset="0" stopColor="#B58BE8" />
           <stop offset="1" stopColor="#6B3FB5" />
         </radialGradient>
+        <radialGradient id={`o${gid}`} cx="35%" cy="30%" r="75%">
+          <stop offset="0" stopColor="#EADDFB" />
+          <stop offset="1" stopColor="#C3A8EA" />
+        </radialGradient>
       </defs>
       {/* 줄기와 잎 */}
       <path d={`M${width / 2} 6 C${width / 2} 18 ${width / 2 - 3} 26 ${width / 2} 36`} stroke="#7A5A3A" strokeWidth="5" fill="none" strokeLinecap="round" />
@@ -89,9 +96,22 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           >
             {isFilled ? (
               <g className={i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
-                <circle r={R} fill={`url(#g${gid})`} />
-                <ellipse cx={-7} cy={-8} rx={5} ry={3.5} fill="#fff" opacity=".55" />
-                {c?.mediaType && <circle cx={11} cy={11} r={5} fill="#fff" stroke="#6B3FB5" strokeWidth="2" />}
+                {(() => {
+                  const team = meUid !== undefined
+                  const other = team && c?.uid !== meUid
+                  return (
+                    <>
+                      <circle r={R} fill={`url(#${other ? 'o' : 'g'}${gid})`} />
+                      <ellipse cx={-7} cy={-8} rx={5} ry={3.5} fill="#fff" opacity={other ? '.8' : '.55'} />
+                      {team && (
+                        <text y="5" textAnchor="middle" fontSize={other ? 14 : 12} fontWeight="800" fill={other ? '#6B4A99' : '#fff'}>
+                          {other ? [...(labelOf?.(c.uid) || '?')][0] : 'Me'}
+                        </text>
+                      )}
+                      {c?.mediaType && <circle cx={13} cy={13} r={5} fill="#fff" stroke="#6B3FB5" strokeWidth="2" />}
+                    </>
+                  )
+                })()}
               </g>
             ) : (
               <>
