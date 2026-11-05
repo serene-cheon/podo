@@ -6,6 +6,7 @@ import Camera from '../components/Camera.jsx'
 import Viewer from '../components/Viewer.jsx'
 import Confetti from '../components/Confetti.jsx'
 import { toast } from '../components/Toast.jsx'
+import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
 import { weekKey, shiftWeek, weekLabel, daysLeft } from '../lib/week.js'
 
 const vibrate = (p) => navigator.vibrate?.(p)
@@ -94,7 +95,7 @@ export default function Room({ api, user, id }) {
   if (room === undefined) return <main className="page center-page"><p className="muted">Loading…</p></main>
   if (room === null) return (
     <main className="page center-page">
-      <div className="empty-emoji">🥲</div><p>Room not found</p><a className="btn ghost" href="#/">Go home</a>
+      <SproutDoodle size={80} /><p>Room not found</p><a className="btn ghost" href="#/">Go home</a>
     </main>
   )
   if (!isMember) return null
@@ -110,21 +111,21 @@ export default function Room({ api, user, id }) {
       <header className="topbar">
         <a className="icon-btn" href="#/" aria-label="Back">←</a>
         <h1 className="title">{room.name}</h1>
-        <button className="btn small ghost" onClick={invite}>Invite</button>
+        <button className="link-mono" onClick={invite}>invite +</button>
       </header>
 
-      <div className="goal-pill">🎯 {room.goal} · {target}×/week</div>
+      <p className="goal-line"><span className="mono muted">goal</span> {room.goal} <span className="mono muted">· {target}×/week</span></p>
 
       <nav className="week-nav">
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="Previous week">‹</button>
-        <span>{weekLabel(week)}{isCurrent ? ' · this week' : ''}</span>
+        <span className="mono">{weekLabel(week).toLowerCase()}{isCurrent ? ' · this week' : ''}</span>
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="Next week">›</button>
       </nav>
 
       <section className={`team-bunch ${done >= total ? 'complete' : ''}`}>
-        <div className="team-row">
-          <b>{done >= total ? '🎉 Team podo complete!' : 'Team podo'}</b>
-          <span><b>{done}</b> / {total}</span>
+        <div className="my-bunch-head">
+          <h2>{done >= total ? 'Team podo is complete!' : 'Team podo'}</h2>
+          <p className="big-count small"><b>{done}</b><span>/{total}</span></p>
         </div>
         <GrapeCluster
           target={total}
@@ -138,18 +139,19 @@ export default function Room({ api, user, id }) {
           onOpen={setViewing}
         />
         <div className="legend">
-          <span><i className="dot me" /> You</span>
-          <span><i className="dot other" /> Friends</span>
+          <span><i className="dot me" /> you</span>
+          <span><i className="dot other" /> friends</span>
         </div>
-        <p className="me-label">
+        <p className="me-label mono">
           {busy ? 'Adding…'
-            : !isCurrent ? `You added ${Math.min(mine.length, target)}/${target}`
-            : mine.length >= target ? `You're done this week 🍇 (${target}/${target})`
-            : `Tap + to add your grape · You ${mine.length}/${target}`}
+            : !isCurrent ? `you added ${Math.min(mine.length, target)}/${target}`
+            : mine.length >= target ? `you're done this week (${target}/${target})`
+            : `tap + to add your grape · you ${mine.length}/${target}`}
         </p>
-        {isCurrent && done < total && <small className="muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · let's fill it together</small>}
+        {isCurrent && done < total && <small className="mono muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · fill it together</small>}
       </section>
 
+      <h2 className="label-mono">members</h2>
       <section className="members">
         {members.map((m) => {
           const n = Math.min(byUser[m.uid]?.length || 0, target)
@@ -168,7 +170,7 @@ export default function Room({ api, user, id }) {
 
       {moments.length > 0 && (
         <section>
-          <h2 className="section-title">This week's moments</h2>
+          <h2 className="label-mono">this week's moments</h2>
           <div className="moments">
             {moments.map((c) => (
               <button key={c.id} className="moment" onClick={() => setViewing(c)}>
@@ -185,15 +187,15 @@ export default function Room({ api, user, id }) {
         </section>
       )}
 
-      <p className="room-code muted small">Room code <b>{id}</b></p>
+      <p className="room-code muted small">room code <b>{id}</b></p>
 
       {addOpen && (
-        <Sheet title="Add a grape 🍇" onClose={() => setAddOpen(false)}>
+        <Sheet title="Add a grape" onClose={() => setAddOpen(false)}>
           <input className="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note (optional)" maxLength={60} />
           <div className="add-options">
-            <button onClick={() => setCamera('photo')}><span>📸</span>Photo</button>
-            <button onClick={() => setCamera('video')}><span>🎬</span>3s video</button>
-            <button onClick={() => add()}><span>🍇</span>Just add</button>
+            <button onClick={() => setCamera('photo')}><DoodleIcon name="photo" />photo</button>
+            <button onClick={() => setCamera('video')}><DoodleIcon name="video" />3s video</button>
+            <button onClick={() => add()}><DoodleIcon name="grape" />just add</button>
           </div>
         </Sheet>
       )}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from '../components/Toast.jsx'
 import Avatar from '../components/Avatar.jsx'
+import { SproutDoodle } from '../components/Doodle.jsx'
 
 const MAX_MEMBERS = 20
 
@@ -22,16 +23,16 @@ export default function Join({ api, user, id }) {
       {room === undefined && <p className="muted">Loading…</p>}
       {room === null && (
         <>
-          <div className="empty-emoji">🥲</div>
+          <SproutDoodle size={80} />
           <p>No room found for code <b>{id}</b></p>
           <a className="btn ghost" href="#/">Go home</a>
         </>
       )}
       {room && (
         <div className="join-card">
-          <p className="muted">You're invited to</p>
+          <p className="mono muted">you're invited to</p>
           <h1>{room.name}</h1>
-          <p className="goal-pill">🎯 {room.goal} · {room.target}×/week</p>
+          <p className="goal-line"><span className="mono muted">goal</span> {room.goal} <span className="mono muted">· {room.target}×/week</span></p>
           <div className="stack big">
             {room.memberIds.map((m) => <Avatar key={m} {...room.members[m]} size={36} />)}
           </div>

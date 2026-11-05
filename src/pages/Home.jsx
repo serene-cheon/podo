@@ -5,7 +5,8 @@ import Sheet from '../components/Sheet.jsx'
 import { toast } from '../components/Toast.jsx'
 import { normalizeCode } from '../lib/code.js'
 import { isDemo } from '../lib/api.js'
-import { weekKey, weekLabel, daysLeft } from '../lib/week.js'
+import { weekKey, weekLabel, daysLeft, weekStart } from '../lib/week.js'
+import { SproutDoodle } from '../components/Doodle.jsx'
 
 export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
@@ -15,7 +16,7 @@ export default function Home({ api, user }) {
   return (
     <main className="page">
       <header className="topbar">
-        <h1 className="brand"><img src="/icon.svg" alt="" width="28" height="28" /> podoit</h1>
+        <h1 className="brand-hand">podoit</h1>
         <button className="icon-btn" onClick={() => confirm('Sign out?') && api.signOut()} aria-label="Sign out">
           <Avatar name={user.name} photo={user.photo} size={32} />
         </button>
@@ -28,28 +29,30 @@ export default function Home({ api, user }) {
         {rooms === null && <p className="muted center">Loading…</p>}
         {rooms?.length === 0 && (
           <div className="empty">
-            <div className="empty-emoji">🍇</div>
-            <p>No rooms yet.<br />Create one and invite your friends!</p>
+            <SproutDoodle size={96} />
+            <h2>Start your first podo.</h2>
+            <p className="mono">create a room · invite friends · fill grapes</p>
           </div>
         )}
-        {rooms?.length > 0 && <h2 className="section-title">My challenges</h2>}
+        {rooms?.length > 0 && <h2 className="label-mono">my challenges</h2>}
         {rooms?.map((r) => (
           <a key={r.id} className="room-card" href={`#/room/${r.id}`}>
             <div className="room-info">
               <b>{r.name}</b>
-              <span className="muted">🎯 {r.goal} · {r.target}×/week</span>
+              <span className="mono muted">{r.goal} · {r.target}×/week</span>
             </div>
             <div className="stack">
-              {r.memberIds.slice(0, 4).map((id) => <Avatar key={id} {...r.members[id]} size={26} />)}
-              {r.memberIds.length > 4 && <span className="more">+{r.memberIds.length - 4}</span>}
+              {r.memberIds.slice(0, 3).map((id) => <Avatar key={id} {...r.members[id]} size={24} />)}
+              {r.memberIds.length > 3 && <span className="more">+{r.memberIds.length - 3}</span>}
             </div>
+            <span className="arrow" aria-hidden>→</span>
           </a>
         ))}
       </section>
 
       <div className="bottom-actions">
-        <button className="btn ghost" onClick={() => setSheet('join')}>Join with code</button>
-        <button className="btn primary" onClick={() => setSheet('create')}>+ New room</button>
+        <button className="btn ghost" onClick={() => setSheet('join')}>join with code</button>
+        <button className="btn primary" onClick={() => setSheet('create')}>+ new room</button>
       </div>
 
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
@@ -82,16 +85,37 @@ function MyBunch({ api, user, rooms }) {
     <section className={`my-bunch ${complete ? 'complete' : ''}`}>
       {rooms.map((r) => <MyCheckinsWatcher key={r.id} api={api} user={user} roomId={r.id} onMine={onMine} />)}
       <div className="my-bunch-head">
-        <b>{complete ? '🎉 My podo complete!' : 'My podo'}</b>
-        <small className="muted">{weekLabel(week)}</small>
+        <h2>{complete ? 'My podo is complete!' : 'My podo'}</h2>
+        <span className="mono muted">{weekLabel(week).toLowerCase()}</span>
       </div>
-      <GrapeCluster target={total} checkins={filled} size={1} maxWidth={250} />
-      <p className="my-bunch-count"><b>{filled.length}</b> / {total} grapes</p>
-      <small className="muted">
+      <GrapeCluster target={total} checkins={filled} size={1} maxWidth={240} />
+      <p className="big-count"><b>{filled.length}</b><span>/{total}</span></p>
+      <p className="mono muted">
         {doneRooms} of {rooms.length} {rooms.length === 1 ? 'challenge' : 'challenges'} done
         {!complete && ` · ${left} day${left === 1 ? '' : 's'} left`}
-      </small>
+      </p>
+      <WeekDots checkins={filled} />
     </section>
+  )
+}
+
+// every day counts: 이번 주 요일마다 포도알을 붙였는지 점으로
+function WeekDots({ checkins }) {
+  const start = weekStart().getTime()
+  const today = Math.floor((Date.now() - start) / 86400000)
+  const days = new Set(checkins.map((c) => Math.floor((c.createdAt - start) / 86400000)))
+  return (
+    <div className="week-dots">
+      <div className="dots">
+        {['m', 't', 'w', 't', 'f', 's', 's'].map((d, i) => (
+          <span key={i} className={`${days.has(i) ? 'on' : ''} ${i === today ? 'today' : ''}`}>
+            <i />
+            <small>{d}</small>
+          </span>
+        ))}
+      </div>
+      <p className="mono muted">every day counts</p>
+    </div>
   )
 }
 
