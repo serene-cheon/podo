@@ -10,9 +10,7 @@ import { weekKey, weekLabel, daysLeft } from '../lib/week.js'
 export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
   const [sheet, setSheet] = useState(null) // 'create' | 'join'
-  const [counts, setCounts] = useState({}) // roomId -> 이번 주 내 포도알 수
   useEffect(() => api.watchMyRooms(user.uid, setRooms), [api, user.uid])
-  const onCount = useCallback((id, n) => setCounts((c) => (c[id] === n ? c : { ...c, [id]: n })), [])
 
   return (
     <main className="page">
@@ -24,6 +22,8 @@ export default function Home({ api, user }) {
       </header>
       {isDemo && <p className="demo-banner">Demo mode · two pretend friends join any room you create</p>}
 
+      {rooms?.length > 0 && <MyBunch api={api} user={user} rooms={rooms} />}
+
       <section className="room-list">
         {rooms === null && <p className="muted center">Loading…</p>}
         {rooms?.length === 0 && (
@@ -32,8 +32,19 @@ export default function Home({ api, user }) {
             <p>No rooms yet.<br />Create one and invite your friends!</p>
           </div>
         )}
-        {rooms?.length > 0 && <WeekSummary rooms={rooms} counts={counts} />}
-        {rooms?.map((r) => <RoomCard key={r.id} api={api} user={user} room={r} onCount={onCount} />)}
+        {rooms?.length > 0 && <h2 className="section-title">My challenges</h2>}
+        {rooms?.map((r) => (
+          <a key={r.id} className="room-card" href={`#/room/${r.id}`}>
+            <div className="room-info">
+              <b>{r.name}</b>
+              <span className="muted">🎯 {r.goal} · {r.target}×/week</span>
+            </div>
+            <div className="stack">
+              {r.memberIds.slice(0, 4).map((id) => <Avatar key={id} {...r.members[id]} size={26} />)}
+              {r.memberIds.length > 4 && <span className="more">+{r.memberIds.length - 4}</span>}
+            </div>
+          </a>
+        ))}
       </section>
 
       <div className="bottom-actions">
@@ -47,52 +58,40 @@ export default function Home({ api, user }) {
   )
 }
 
-// 이번 주 내 포도알 요약 (모든 방 합계)
-function WeekSummary({ rooms, counts }) {
-  const week = weekKey()
-  const total = rooms.reduce((s, r) => s + r.target, 0)
-  const done = rooms.reduce((s, r) => s + Math.min(counts[r.id] || 0, r.target), 0)
-  const bunches = rooms.filter((r) => (counts[r.id] || 0) >= r.target).length
-  const left = daysLeft(week)
-  return (
-    <div className="week-summary">
-      <div className="team-row">
-        <b>Your week</b>
-        <span><b>{done}</b> / {total} grapes</span>
-      </div>
-      <div className="bar"><span style={{ width: `${total ? (done / total) * 100 : 0}%` }} /></div>
-      <small className="muted">
-        {weekLabel(week)} · {bunches} of {rooms.length} {rooms.length === 1 ? 'bunch' : 'bunches'} complete
-        {done < total && ` · ${left} day${left === 1 ? '' : 's'} left`}
-      </small>
-    </div>
-  )
+// 방마다 이번 주 내 체크인을 구독해서 위로 올려줌 (화면에는 안 보임)
+function MyCheckinsWatcher({ api, user, roomId, onMine }) {
+  useEffect(() => api.watchCheckins(roomId, weekKey(), (list) =>
+    onMine(roomId, list.filter((c) => c.uid === user.uid))), [api, user.uid, roomId, onMine])
+  return null
 }
 
-// 방 카드: 이번 주 내 포도송이를 미니로 보여줌
-function RoomCard({ api, user, room: r, onCount }) {
-  const [mine, setMine] = useState([])
-  useEffect(() => api.watchCheckins(r.id, weekKey(), (list) => {
-    const m = list.filter((c) => c.uid === user.uid).sort((a, b) => a.createdAt - b.createdAt)
-    setMine(m)
-    onCount(r.id, m.length)
-  }), [api, r.id, user.uid, onCount])
-  const complete = mine.length >= r.target
+// 홈: 내 모든 챌린지를 합친 이번 주 포도송이
+function MyBunch({ api, user, rooms }) {
+  const [mineByRoom, setMineByRoom] = useState({})
+  const onMine = useCallback((id, list) => setMineByRoom((m) => ({ ...m, [id]: list })), [])
+  const week = weekKey()
+  const total = rooms.reduce((s, r) => s + r.target, 0)
+  // 방마다 목표 개수까지만 세고, 붙인 시간순으로 송이를 채움
+  const filled = rooms
+    .flatMap((r) => [...(mineByRoom[r.id] || [])].sort((a, b) => a.createdAt - b.createdAt).slice(0, r.target))
+    .sort((a, b) => a.createdAt - b.createdAt)
+  const doneRooms = rooms.filter((r) => (mineByRoom[r.id]?.length || 0) >= r.target).length
+  const left = daysLeft(week)
+  const complete = total > 0 && filled.length >= total
   return (
-    <a className={`room-card ${complete ? 'complete' : ''}`} href={`#/room/${r.id}`}>
-      <div className="room-info">
-        <b>{r.name}</b>
-        <span className="muted">🎯 {r.goal} · {r.target}×/week</span>
-        <div className="stack">
-          {r.memberIds.slice(0, 5).map((id) => <Avatar key={id} {...r.members[id]} size={22} />)}
-          {r.memberIds.length > 5 && <span className="more">+{r.memberIds.length - 5}</span>}
-        </div>
+    <section className={`my-bunch ${complete ? 'complete' : ''}`}>
+      {rooms.map((r) => <MyCheckinsWatcher key={r.id} api={api} user={user} roomId={r.id} onMine={onMine} />)}
+      <div className="my-bunch-head">
+        <b>{complete ? '🎉 Your bunch is complete!' : 'My bunch this week'}</b>
+        <small className="muted">{weekLabel(week)}</small>
       </div>
-      <div className="room-bunch">
-        <GrapeCluster target={r.target} checkins={mine} size={0.62} />
-        <small>{complete ? 'Done 🍇' : `${Math.min(mine.length, r.target)}/${r.target}`}</small>
-      </div>
-    </a>
+      <GrapeCluster target={total} checkins={filled} size={1} maxWidth={250} />
+      <p className="my-bunch-count"><b>{filled.length}</b> / {total} grapes</p>
+      <small className="muted">
+        {doneRooms} of {rooms.length} {rooms.length === 1 ? 'challenge' : 'challenges'} done
+        {!complete && ` · ${left} day${left === 1 ? '' : 's'} left`}
+      </small>
+    </section>
   )
 }
 

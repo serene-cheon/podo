@@ -8,8 +8,17 @@ const R = 20
 const DX = R * 2 + 4
 const DY = R * 1.8 + 2
 
+// 8알 이상: 5,4,3,2,1 처럼 한 줄씩 줄어드는 송이 모양
+function autoRows(n) {
+  let w = 1
+  while ((w * (w + 1)) / 2 < n) w++
+  const rows = []
+  for (let left = n, k = w; left > 0; k--) { rows.push(Math.min(k, left)); left -= k }
+  return rows
+}
+
 function layout(target) {
-  const rows = LAYOUTS[target] || LAYOUTS[7]
+  const rows = LAYOUTS[target] || autoRows(Math.max(1, target))
   const maxRow = Math.max(...rows)
   const width = maxRow * DX
   const pts = []
@@ -24,9 +33,10 @@ function layout(target) {
  * checkins: 이 사람의 이번 주 체크인(시간순). 앞에서부터 포도알을 채웁니다.
  * canAdd: 다음 빈 포도알을 눌러 붙일 수 있는지 (내 송이 + 이번 주)
  */
-export default function GrapeCluster({ target, checkins, size = 1, canAdd, onAdd, onOpen }) {
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen }) {
   const gid = useId().replace(/:/g, '')
   const { pts, width, height } = layout(target)
+  if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
   const filled = Math.min(checkins.length, target)
 
   // 새로 채워진 알만 '뿅' 애니메이션
