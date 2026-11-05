@@ -1,0 +1,26 @@
+// 한 방에 골 여러 개. 예전 방(goal/target 하나)도 'main' 골 하나로 그대로 동작하게.
+export const MAX_GOALS = 5
+
+export function goalsOf(room) {
+  if (room?.goals?.length) return room.goals
+  return [{ id: 'main', title: room?.goal || 'Goal', target: room?.target || 1 }]
+}
+
+// 체크인이 어느 골에 속하는지. goalId 없는 예전 기록은 첫 번째 골, 삭제된 골이면 null
+export function goalIdOf(c, goals) {
+  if (!c.goalId) return goals[0].id
+  return goals.some((g) => g.id === c.goalId) ? c.goalId : null
+}
+
+export const newGoalId = () => Math.random().toString(36).slice(2, 8)
+
+// 저장용: 빈 제목 제거, 앞뒤 공백 제거
+export function cleanGoals(goals) {
+  return goals
+    .map((g) => ({ id: g.id || newGoalId(), title: g.title.trim(), target: g.target }))
+    .filter((g) => g.title)
+    .slice(0, MAX_GOALS)
+}
+
+// 방 문서에 같이 저장하는 값 (첫 골을 goal/target 에도 넣어서 예전 버전과 호환)
+export const goalFields = (goals) => ({ goals, goal: goals[0].title, target: goals[0].target })

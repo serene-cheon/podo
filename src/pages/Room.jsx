@@ -9,6 +9,8 @@ import { toast } from '../components/Toast.jsx'
 import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
 import { makeWeekImage, saveImage } from '../lib/weekImage.js'
 import { weekKey, shiftWeek, weekLabel, daysLeft } from '../lib/week.js'
+import { goalsOf, goalIdOf, cleanGoals, goalFields } from '../lib/goals.js'
+import GoalsEditor from '../components/GoalsEditor.jsx'
 
 const vibrate = (p) => navigator.vibrate?.(p)
 
@@ -27,6 +29,8 @@ export default function Room({ api, user, id }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const bunchRef = useRef(null)
+  const [goalPick, setGoalPick] = useState(null)
+  const [personUid, setPersonUid] = useState(null) // 개별 포도송이 보기
 
   useEffect(() => api.watchRoom(id, setRoom), [api, id])
   useEffect(() => api.watchCheckins(id, week, (list) => setData({ week, list })), [api, id, week])
@@ -34,47 +38,58 @@ export default function Room({ api, user, id }) {
   const isMember = room?.memberIds.includes(user.uid)
   useEffect(() => { if (room && !isMember) location.replace(`#/join/${id}`) }, [room, isMember, id])
 
-  const target = room?.target || 1
+  const goals = useMemo(() => goalsOf(room), [room])
+  const goal = goals.find((g) => g.id === goalPick) || goals[0]
+  const target = goal.target
   const members = useMemo(() => {
     if (!room) return []
     const ids = [user.uid, ...room.memberIds.filter((m) => m !== user.uid)].filter((m) => room.memberIds.includes(m))
     return ids.map((uid) => ({ uid, ...room.members[uid] }))
   }, [room, user.uid])
 
-  const byUser = useMemo(() => {
+  // 골별 → 사람별 체크인 (시간순)
+  const byGoal = useMemo(() => {
     const m = {}
     const list = data.week === week ? data.list : []
-    for (const c of [...list].sort((a, b) => a.createdAt - b.createdAt)) (m[c.uid] ||= []).push(c)
+    for (const c of [...list].sort((a, b) => a.createdAt - b.createdAt)) {
+      const gid = goalIdOf(c, goals)
+      if (!gid) continue
+      ;((m[gid] ||= {})[c.uid] ||= []).push(c)
+    }
     return m
-  }, [data, week])
+  }, [data, week, goals])
+  const byUser = byGoal[goal.id] || {}
+  const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, g.target)
 
   const total = target * members.length
   const done = members.reduce((s, m) => s + Math.min(byUser[m.uid]?.length || 0, target), 0)
   const mine = byUser[user.uid] || []
   const isCurrent = week === thisWeek
-  const moments = (data.week === week ? data.list : []).filter((c) => c.mediaType).sort((a, b) => b.createdAt - a.createdAt)
+  const moments = (data.week === week ? data.list : []).filter((c) => c.mediaType && goalIdOf(c, goals)).sort((a, b) => b.createdAt - a.createdAt)
+  const goalTitle = (c) => goals.find((g) => g.id === goalIdOf(c, goals))?.title
 
   // 팀 송이가 "지금" 완성되는 순간에만 축하 (처음 로딩 때는 X)
-  const seen = useRef({ week: null, done: 0 })
+  const seen = useRef({ key: null, done: 0 })
   useEffect(() => {
     if (data.week !== week || !total) return
-    if (seen.current.week === week && seen.current.done < total && done >= total) {
+    const key = `${week}|${goal.id}`
+    if (seen.current.key === key && seen.current.done < total && done >= total) {
       setParty(true)
       vibrate([30, 60, 30, 60, 80])
       setTimeout(() => setParty(false), 3500)
     }
-    seen.current = { week, done }
-  }, [data.week, week, done, total])
+    seen.current = { key, done }
+  }, [data.week, week, done, total, goal.id])
 
   async function add({ blob = null, mediaType = null } = {}) {
     setCamera(null)
     setAddOpen(false)
     setBusy(true)
     try {
-      await api.addCheckin(user, id, { week: thisWeek, blob, mediaType, note: note.trim() })
+      await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, blob, mediaType, note: note.trim() })
       vibrate(20)
       setNote('')
-      if (mine.length + 1 === target) toast('Your bunch is complete! 🍇')
+      if (mine.length + 1 === target) toast(`You finished “${goal.title}” this week 🍇`)
     } catch (e) {
       toast('Could not add: ' + (e.message || e))
     } finally {
@@ -97,14 +112,15 @@ export default function Room({ api, user, id }) {
       const blob = await makeWeekImage({
         svgEl: bunchRef.current.querySelector('svg.cluster'),
         roomName: room.name,
-        goal: room.goal,
+        goal: goal.title,
         target,
         weekLabel: weekLabel(week).toLowerCase(),
         done,
         total,
         members: members.map((m) => ({ name: m.name, n: Math.min(byUser[m.uid]?.length || 0, target), isMe: m.uid === user.uid })),
       })
-      const r = await saveImage(blob, `podoit-${room.name.replace(/[^\w가-힣-]+/g, '-')}-${week}.png`)
+      const slug = (t) => t.replace(/[^\w가-힣-]+/g, '-')
+      const r = await saveImage(blob, `podoit-${slug(room.name)}-${slug(goal.title)}-${week}.png`)
       if (r === 'downloaded') toast('Image saved')
     } catch (e) {
       toast("Couldn't make the image: " + (e.message || e))
@@ -118,7 +134,7 @@ export default function Room({ api, user, id }) {
   }
 
   async function share() {
-    const text = `[podoit] Join "${room.name}" and let's ${room.goal} together! Code: ${id}`
+    const text = `[podoit] Join "${room.name}" and let's ${goals.map((g) => g.title).join(', ')} together! Code: ${id}`
     if (!navigator.share) return copy(`${text}\n${inviteUrl}`, 'Invite copied')
     try { await navigator.share({ title: 'podoit invite', text, url: inviteUrl }) } catch { /* 공유 취소 */ }
   }
@@ -148,7 +164,18 @@ export default function Room({ api, user, id }) {
         </div>
       </header>
 
-      <p className="goal-line"><span className="mono muted">goal</span> {room.goal} <span className="mono muted">· {target}×/week</span></p>
+      {goals.length > 1 ? (
+        <nav className="goal-tabs" aria-label="Goals">
+          {goals.map((g) => (
+            <button key={g.id} className={`goal-tab ${g.id === goal.id ? 'on' : ''} ${myCount(g) >= g.target ? 'done' : ''}`} onClick={() => setGoalPick(g.id)}>
+              <b>{g.title}</b>
+              <small>{g.target}×/week · you {myCount(g)}/{g.target}</small>
+            </button>
+          ))}
+        </nav>
+      ) : (
+        <p className="goal-line"><span className="mono muted">goal</span> {goal.title} <span className="mono muted">· {target}×/week</span></p>
+      )}
 
       <nav className="week-nav">
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="Previous week">‹</button>
@@ -158,7 +185,10 @@ export default function Room({ api, user, id }) {
 
       <section ref={bunchRef} className={`team-bunch ${done >= total ? 'complete' : ''}`}>
         <div className="my-bunch-head">
-          <h2>{done >= total ? 'Team podo is complete!' : 'Team podo'}</h2>
+          <div>
+            <h2>{done >= total ? 'Team podo is complete!' : 'Team podo'}</h2>
+            {goals.length > 1 && <p className="mono muted">{goal.title}</p>}
+          </div>
           <p className="big-count small"><b>{done}</b><span>/{total}</span></p>
         </div>
         <GrapeCluster
@@ -166,6 +196,7 @@ export default function Room({ api, user, id }) {
           checkins={teamFilled}
           size={1.4}
           maxWidth={300}
+          key={goal.id}
           meUid={user.uid}
           labelOf={(uid) => room.members[uid]?.name}
           canAdd={isCurrent && !busy && mine.length < target}
@@ -195,14 +226,14 @@ export default function Room({ api, user, id }) {
         {members.map((m) => {
           const n = Math.min(byUser[m.uid]?.length || 0, target)
           return (
-            <div key={m.uid} className={`member ${m.uid === user.uid ? 'is-me' : ''} ${n >= target ? 'done' : ''}`}>
+            <button key={m.uid} className={`member ${m.uid === user.uid ? 'is-me' : ''} ${n >= target ? 'done' : ''}`} onClick={() => setPersonUid(m.uid)}>
               <Avatar {...m} size={24} />
               <span className="member-name">{m.uid === user.uid ? 'You' : m.name}</span>
               <span className="member-dots">
                 {Array.from({ length: target }, (_, i) => <i key={i} className={i < n ? 'on' : ''} />)}
               </span>
               <small>{n}/{target}</small>
-            </div>
+            </button>
           )
         })}
       </section>
@@ -227,6 +258,30 @@ export default function Room({ api, user, id }) {
       )}
 
 
+      {personUid && room.members[personUid] && (
+        <Sheet title={personUid === user.uid ? 'My podo' : `${room.members[personUid].name}'s podo`} onClose={() => setPersonUid(null)}>
+          <div className="person">
+            <div className="person-head">
+              <Avatar {...room.members[personUid]} size={40} />
+              <span className="mono muted">{weekLabel(week).toLowerCase()}{isCurrent ? ' · this week' : ''}</span>
+            </div>
+            <div className="person-bunches">
+              {goals.map((g) => {
+                const list = byGoal[g.id]?.[personUid] || []
+                const n = Math.min(list.length, g.target)
+                return (
+                  <div key={g.id} className={`person-bunch ${n >= g.target ? 'done' : ''}`}>
+                    <GrapeCluster target={g.target} checkins={list} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onOpen={(c) => { setPersonUid(null); setViewing(c) }} />
+                    <b>{g.title}</b>
+                    <small className="mono muted">{n}/{g.target}{n >= g.target ? ' · done' : ''}</small>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </Sheet>
+      )}
+
       {settingsOpen && (
         <SettingsSheet api={api} room={room} isOwner={room.ownerId === user.uid} ownerName={room.members[room.ownerId]?.name} onClose={() => setSettingsOpen(false)} />
       )}
@@ -246,7 +301,7 @@ export default function Room({ api, user, id }) {
       )}
 
       {addOpen && (
-        <Sheet title="Add a grape" onClose={() => setAddOpen(false)}>
+        <Sheet title={goals.length > 1 ? `Add a grape · ${goal.title}` : 'Add a grape'} onClose={() => setAddOpen(false)}>
           <input className="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note (optional)" maxLength={60} />
           <div className="add-options">
             <button onClick={() => setCamera('photo')}><DoodleIcon name="photo" />photo</button>
@@ -261,6 +316,7 @@ export default function Room({ api, user, id }) {
       {viewing && (
         <Viewer
           checkin={viewing}
+          goal={goals.length > 1 ? goalTitle(viewing) : null}
           member={memberOf(viewing.uid)}
           canRemove={viewing.uid === user.uid && viewing.week === thisWeek}
           onRemove={() => remove(viewing)}
@@ -273,17 +329,21 @@ export default function Room({ api, user, id }) {
   )
 }
 
-// 방 설정: 방장은 방 이름 변경, 다른 멤버는 보기만
+// 방 설정: 방장은 방 이름과 골을 바꿀 수 있고, 다른 멤버는 보기만
 function SettingsSheet({ api, room, isOwner, ownerName, onClose }) {
   const [name, setName] = useState(room.name)
+  const [goals, setGoals] = useState(() => goalsOf(room).map((g) => ({ ...g })))
   const [busy, setBusy] = useState(false)
   const trimmed = name.trim()
+  const clean = cleanGoals(goals)
   async function save(e) {
     e.preventDefault()
-    if (!trimmed || trimmed === room.name) return onClose()
+    if (!trimmed || !clean.length) return
+    const removed = goalsOf(room).filter((g) => !clean.some((c) => c.id === g.id))
+    if (removed.length && !confirm(`Remove ${removed.map((g) => `“${g.title}”`).join(', ')}? Its grapes will be hidden.`)) return
     setBusy(true)
     try {
-      await api.updateRoom(room.id, { name: trimmed })
+      await api.updateRoom(room.id, { name: trimmed, ...goalFields(clean) })
       toast('Room updated')
       onClose()
     } catch (err) {
@@ -297,12 +357,14 @@ function SettingsSheet({ api, room, isOwner, ownerName, onClose }) {
         <label>room name
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} required disabled={!isOwner} />
         </label>
+        <div className="label">goals</div>
+        <GoalsEditor goals={goals} onChange={setGoals} disabled={!isOwner} />
         <div className="account-row">
           <span className="mono muted">host</span>
           <span className="mono">{isOwner ? 'you' : ownerName || '—'}</span>
         </div>
         {isOwner
-          ? <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'saving…' : 'save'}</button>
+          ? <button className="btn primary block" disabled={busy || !trimmed || !clean.length}>{busy ? 'saving…' : 'save'}</button>
           : <p className="mono muted center">only the host can change room settings</p>}
       </form>
     </Sheet>

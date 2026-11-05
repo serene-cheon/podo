@@ -64,8 +64,8 @@ firestore.rules, storage.rules   보안 규칙 (방 멤버만 기록·미디어 
 
 데이터 모델:
 
-- `rooms/{6자리코드}`: `{ name, goal, target, ownerId, memberIds[], members{uid:{name,photo}} }`
-- `rooms/{코드}/checkins/{id}`: `{ uid, week:'YYYY-MM-DD(월)', createdAt, mediaType, mediaUrl, mediaPath, note }`
+- `rooms/{6자리코드}`: `{ name, goals: [{id,title,target}], goal, target(첫 골·호환용), ownerId, memberIds[], members{uid:{name,photo}} }`
+- `rooms/{코드}/checkins/{id}`: `{ uid, week:'YYYY-MM-DD(월)', goalId, createdAt, mediaType, mediaUrl, mediaPath, note }`
 - Storage `rooms/{코드}/{uid}/{시간}.jpg|mp4|webm`: 사진은 최대 1080px JPEG로 줄이고, 영상은 3초·약 1.5Mbps라 한 개에 수백 KB 정도입니다.
 
 ## 다음에 넣어볼 만한 것

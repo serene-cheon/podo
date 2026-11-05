@@ -49,7 +49,7 @@ const INK = '#5A3A9E'
  * canAdd: 다음 빈 포도알을 눌러 붙일 수 있는지
  * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 보라 + "me", 친구 알은 핑크 라일락 + 이름 첫 글자
  */
-export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen, meUid, labelOf }) {
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen, meUid, labelOf, tint }) {
   const gid = useId().replace(/:/g, '')
   const { pts, width, height } = layout(target)
   if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
@@ -123,7 +123,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         const isFilled = i < filled
         const isNext = !isFilled && i === filled && canAdd
         const handle = isFilled ? () => onOpen?.(c) : isNext ? onAdd : undefined
-        const other = team && c?.uid !== meUid
+        const other = team ? c?.uid !== meUid : tint === 'other' // tint: 개별 송이 색 (친구는 핑크)
         return (
           <g
             key={i}

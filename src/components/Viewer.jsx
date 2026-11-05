@@ -2,7 +2,7 @@ import Avatar from './Avatar.jsx'
 import { timeLabel } from '../lib/week.js'
 
 // 포도알(모먼트) 크게 보기
-export default function Viewer({ checkin, member, canRemove, onRemove, onClose }) {
+export default function Viewer({ checkin, member, goal, canRemove, onRemove, onClose }) {
   const c = checkin
   return (
     <div className="viewer" onClick={onClose}>
@@ -11,7 +11,7 @@ export default function Viewer({ checkin, member, canRemove, onRemove, onClose }
           <Avatar name={member?.name} photo={member?.photo} size={32} />
           <div>
             <b>{member?.name || 'Unknown'}</b>
-            <small>{timeLabel(c.createdAt)}</small>
+            <small>{timeLabel(c.createdAt)}{goal ? ` · ${goal}` : ''}</small>
           </div>
           <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>

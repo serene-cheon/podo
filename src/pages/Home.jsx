@@ -7,6 +7,8 @@ import { normalizeCode } from '../lib/code.js'
 import { isDemo } from '../lib/api.js'
 import { weekKey, weekLabel, daysLeft, weekStart } from '../lib/week.js'
 import { SproutDoodle } from '../components/Doodle.jsx'
+import GoalsEditor from '../components/GoalsEditor.jsx'
+import { goalsOf, goalIdOf, cleanGoals, newGoalId } from '../lib/goals.js'
 
 export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
@@ -39,7 +41,9 @@ export default function Home({ api, user }) {
           <a key={r.id} className="room-card" href={`#/room/${r.id}`}>
             <div className="room-info">
               <b>{r.name}</b>
-              <span className="mono muted">{r.goal} · {r.target}×/week</span>
+              <span className="mono muted">
+                {goalsOf(r).length > 1 ? goalsOf(r).map((g) => g.title).join(' · ') : `${goalsOf(r)[0].title} · ${goalsOf(r)[0].target}×/week`}
+              </span>
             </div>
             <div className="stack">
               {r.memberIds.slice(0, 3).map((id) => <Avatar key={id} {...r.members[id]} size={24} />)}
@@ -74,12 +78,15 @@ function MyBunch({ api, user, rooms }) {
   const [mineByRoom, setMineByRoom] = useState({})
   const onMine = useCallback((id, list) => setMineByRoom((m) => ({ ...m, [id]: list })), [])
   const week = weekKey()
-  const total = rooms.reduce((s, r) => s + r.target, 0)
-  // 방마다 목표 개수까지만 세고, 붙인 시간순으로 송이를 채움
-  const filled = rooms
-    .flatMap((r) => [...(mineByRoom[r.id] || [])].sort((a, b) => a.createdAt - b.createdAt).slice(0, r.target))
+  // 모든 방의 모든 골: 골마다 목표 개수까지만 세고, 붙인 시간순으로 송이를 채움
+  const allGoals = rooms.flatMap((r) => goalsOf(r).map((g) => ({ room: r, goal: g })))
+  const mineOf = ({ room, goal }) => (mineByRoom[room.id] || [])
+    .filter((c) => goalIdOf(c, goalsOf(room)) === goal.id)
     .sort((a, b) => a.createdAt - b.createdAt)
-  const doneRooms = rooms.filter((r) => (mineByRoom[r.id]?.length || 0) >= r.target).length
+    .slice(0, goal.target)
+  const total = allGoals.reduce((s, x) => s + x.goal.target, 0)
+  const filled = allGoals.flatMap(mineOf).sort((a, b) => a.createdAt - b.createdAt)
+  const doneGoals = allGoals.filter((x) => mineOf(x).length >= x.goal.target).length
   const left = daysLeft(week)
   const complete = total > 0 && filled.length >= total
   return (
@@ -92,7 +99,7 @@ function MyBunch({ api, user, rooms }) {
       <GrapeCluster target={total} checkins={filled} size={1} maxWidth={240} />
       <p className="big-count"><b>{filled.length}</b><span>/{total}</span></p>
       <p className="mono muted">
-        {doneRooms} of {rooms.length} {rooms.length === 1 ? 'challenge' : 'challenges'} done
+        {doneGoals} of {allGoals.length} {allGoals.length === 1 ? 'goal' : 'goals'} done
         {!complete && ` · ${left} day${left === 1 ? '' : 's'} left`}
       </p>
       <WeekDots checkins={filled} />
@@ -165,14 +172,15 @@ function ProfileSheet({ api, user, onClose }) {
 
 function CreateSheet({ api, user, onClose }) {
   const [name, setName] = useState('')
-  const [goal, setGoal] = useState('')
-  const [target, setTarget] = useState(3)
+  const [goals, setGoals] = useState(() => [{ id: newGoalId(), title: '', target: 3 }])
   const [busy, setBusy] = useState(false)
+  const clean = cleanGoals(goals)
   async function submit(e) {
     e.preventDefault()
+    if (!clean.length) return
     setBusy(true)
     try {
-      const id = await api.createRoom(user, { name: name.trim(), goal: goal.trim(), target })
+      const id = await api.createRoom(user, { name: name.trim(), goals: clean })
       location.hash = `#/room/${id}`
     } catch (err) {
       toast('Could not create: ' + (err.message || err))
@@ -185,17 +193,10 @@ function CreateSheet({ api, user, onClose }) {
         <label>Room name
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Glow-up crew" maxLength={30} required autoFocus />
         </label>
-        <label>Shared goal
-          <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g. Work out 30 min" maxLength={40} required />
-        </label>
-        <div className="label">How many times a week?</div>
-        <div className="chips">
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-            <button type="button" key={n} className={n === target ? 'on' : ''} onClick={() => setTarget(n)}>{n}</button>
-          ))}
-        </div>
-        <p className="muted small">Each person fills {target} grape{target > 1 ? 's' : ''} a week to finish their bunch!</p>
-        <button className="btn primary block" disabled={busy}>{busy ? 'Creating…' : 'Create'}</button>
+        <div className="label">Shared goals</div>
+        <GoalsEditor goals={goals} onChange={setGoals} />
+        <p className="muted small">Each goal gets its own team podo. Everyone fills their grapes every week!</p>
+        <button className="btn primary block" disabled={busy || !clean.length}>{busy ? 'Creating…' : 'Create'}</button>
       </form>
     </Sheet>
   )

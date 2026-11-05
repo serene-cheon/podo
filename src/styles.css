@@ -239,3 +239,33 @@ input { font: inherit; }
 .top-actions { display: flex; align-items: center; gap: 2px; }
 .settings-btn { color: var(--grape); padding: 4px; min-width: 36px; }
 .form input:disabled { background: var(--card); color: var(--muted); }
+/* goals editor */
+.goals-editor { display: flex; flex-direction: column; gap: 12px; }
+.goal-edit { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1.5px solid var(--line); border-radius: 16px; background: #fff; }
+.goal-edit-top { display: flex; align-items: center; gap: 4px; }
+.goal-edit-top input { flex: 1; }
+.goal-remove { font-size: 24px; color: var(--muted); min-width: 36px; }
+.chips.small { align-items: center; gap: 5px; }
+.chips.small button { max-width: 34px; font-size: 14px; }
+.chips.small .mono { margin-left: 4px; white-space: nowrap; font-size: 13px; }
+.add-goal { align-self: flex-start; padding-left: 2px; }
+.sheet { max-height: 92dvh; overflow-y: auto; }
+/* goal tabs */
+.goal-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 2px 18px; }
+.goal-tabs::-webkit-scrollbar { display: none; }
+.goal-tab { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid var(--line); background: #fff; border-radius: 16px; padding: 9px 14px; text-align: left; max-width: 180px; }
+.goal-tab b { font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+.goal-tab small { font-size: 12px; color: var(--muted); }
+.goal-tab.on { border-color: var(--grape); background: var(--grape-soft); }
+.goal-tab.on b { color: var(--grape); }
+.goal-tab.done small { color: var(--grape); }
+.goal-list { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+/* person sheet */
+button.member { width: 100%; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+button.member:active { background: var(--grape-soft); }
+.person { display: flex; flex-direction: column; gap: 14px; }
+.person-head { display: flex; align-items: center; gap: 12px; }
+.person-bunches { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.person-bunch { display: flex; flex-direction: column; align-items: center; gap: 4px; background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 12px 8px 14px; text-align: center; }
+.person-bunch b { font-weight: 500; font-size: 15px; }
+.person-bunch.done { border-color: var(--grape-2); }

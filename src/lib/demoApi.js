@@ -2,6 +2,7 @@
 // 사진/영상은 새로고침하면 사라집니다(메모리에만 보관).
 import { makeRoomCode } from './code.js'
 import { weekKey } from './week.js'
+import { goalFields } from './goals.js'
 
 const KEY = 'podo-demo-v1'
 const load = () => {
@@ -38,17 +39,19 @@ function seedFriends(room) {
   FRIENDS.forEach((f, i) => {
     room.memberIds.push(f.uid)
     room.members[f.uid] = { name: f.name, photo: f.photo }
-    const n = Math.min(room.target, i === 0 ? room.target - 1 : 1)
-    for (let k = 0; k < n; k++) {
-      const withPhoto = k === 0
-      db.checkins.push({
-        id: uid(), roomId: room.id, uid: f.uid, week,
-        createdAt: now - (k + 1 + i) * 3.6e6 * 7,
-        mediaType: withPhoto ? 'photo' : null,
-        mediaUrl: withPhoto ? samplePhoto(i ? '🧘' : '🏃', i ? '#FFD3A5' : '#C2E9FB', i ? '#FD6585' : '#A18CD1') : null,
-        note: withPhoto ? (i ? 'Morning yoga done' : 'River run 5km!') : '',
-      })
-    }
+    room.goals.forEach((g, gi) => {
+      const n = Math.min(g.target, i === 0 ? g.target - 1 : 1)
+      for (let k = 0; k < n; k++) {
+        const withPhoto = k === 0 && gi === 0
+        db.checkins.push({
+          id: uid(), roomId: room.id, uid: f.uid, week, goalId: g.id,
+          createdAt: now - (k + 1 + i + gi) * 3.6e6 * 7,
+          mediaType: withPhoto ? 'photo' : null,
+          mediaUrl: withPhoto ? samplePhoto(i ? '🧘' : '🏃', i ? '#FFD3A5' : '#C2E9FB', i ? '#FD6585' : '#A18CD1') : null,
+          note: withPhoto ? (i ? 'Morning yoga done' : 'River run 5km!') : '',
+        })
+      }
+    })
   })
 }
 
@@ -77,10 +80,10 @@ export default {
     save()
   },
 
-  async createRoom(user, { name, goal, target }) {
+  async createRoom(user, { name, goals }) {
     const id = makeRoomCode()
     const room = {
-      id, name, goal, target, ownerId: user.uid, createdAt: Date.now(),
+      id, name, ...goalFields(goals), ownerId: user.uid, createdAt: Date.now(),
       memberIds: [user.uid], members: { [user.uid]: { name: user.name, photo: user.photo } },
     }
     db.rooms[id] = room
@@ -103,11 +106,11 @@ export default {
       .filter((c) => c.roomId === roomId && c.week === week)
       .map((c) => ({ ...c, mediaUrl: c.mediaUrl || media.get(c.id) || null })))),
 
-  async addCheckin(user, roomId, { week, blob, mediaType, note }) {
+  async addCheckin(user, roomId, { week, goalId, blob, mediaType, note }) {
     const id = uid()
     if (blob) media.set(id, URL.createObjectURL(blob))
     await new Promise((r) => setTimeout(r, blob ? 400 : 0)) // 업로드 느낌
-    db.checkins.push({ id, roomId, uid: user.uid, week, createdAt: Date.now(), mediaType: blob ? mediaType : null, mediaUrl: null, note: note || '' })
+    db.checkins.push({ id, roomId, uid: user.uid, week, goalId: goalId || null, createdAt: Date.now(), mediaType: blob ? mediaType : null, mediaUrl: null, note: note || '' })
     save()
   },
 

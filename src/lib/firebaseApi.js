@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { makeRoomCode } from './code.js'
+import { goalFields } from './goals.js'
 
 const toUser = (u) => u && { uid: u.uid, name: u.displayName || 'No name', photo: u.photoURL || null, email: u.email || null }
 
@@ -80,14 +81,14 @@ export function createFirebaseApi(config) {
       await updateDoc(doc(db, 'rooms', roomId), fields)
     },
 
-    async createRoom(user, { name, goal, target }) {
+    async createRoom(user, { name, goals }) {
       for (let tries = 0; tries < 5; tries++) {
         const id = makeRoomCode()
         const ref_ = doc(db, 'rooms', id)
         const created = await runTransaction(db, async (tx) => {
           if ((await tx.get(ref_)).exists()) return false
           tx.set(ref_, {
-            name, goal, target,
+            name, ...goalFields(goals),
             ownerId: user.uid,
             memberIds: [user.uid],
             members: { [user.uid]: { name: user.name, photo: user.photo } },
@@ -117,7 +118,7 @@ export function createFirebaseApi(config) {
       })
     },
 
-    async addCheckin(user, roomId, { week, blob, mediaType, note }) {
+    async addCheckin(user, roomId, { week, goalId, blob, mediaType, note }) {
       let mediaUrl = null
       let mediaPath = null
       if (blob) {
@@ -130,6 +131,7 @@ export function createFirebaseApi(config) {
       await addDoc(collection(db, 'rooms', roomId, 'checkins'), {
         uid: user.uid,
         week,
+        goalId: goalId || null,
         createdAt: serverTimestamp(),
         mediaType: blob ? mediaType : null,
         mediaUrl,

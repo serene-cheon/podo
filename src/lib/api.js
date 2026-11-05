@@ -22,18 +22,18 @@ export function loadApi() {
 /*
   API 모양 (두 구현이 똑같이 따릅니다)
   user    = { uid, name, photo, email }
-  room    = { id, name, goal, target, ownerId, memberIds: [uid], members: { [uid]: {name, photo} } }
-  checkin = { id, uid, week, createdAt(ms), mediaType: 'photo'|'video'|null, mediaUrl, note }
+  room    = { id, name, goals: [{id, title, target}], goal, target(첫 골, 호환용), ownerId, memberIds: [uid], members: { [uid]: {name, photo} } }
+  checkin = { id, uid, week, goalId, createdAt(ms), mediaType: 'photo'|'video'|null, mediaUrl, note }
 
   onAuth(cb) -> unsubscribe
   signIn(), signOut()
   updateName(user, name)                         닉네임 변경 (모든 방에 반영)
   watchMyRooms(uid, cb) -> unsubscribe
   watchRoom(roomId, cb) -> unsubscribe            cb(null) 이면 방이 없음
-  createRoom(user, {name, goal, target}) -> roomId
+  createRoom(user, {name, goals}) -> roomId
   joinRoom(user, roomId)
-  updateRoom(roomId, { name })                     방장만: 방 설정 변경
+  updateRoom(roomId, { name, goals, goal, target }) 방장만: 방 설정 변경
   watchCheckins(roomId, week, cb) -> unsubscribe
-  addCheckin(user, roomId, {week, blob, mediaType, note})
+  addCheckin(user, roomId, {week, goalId, blob, mediaType, note})
   deleteCheckin(roomId, checkin)
 */
