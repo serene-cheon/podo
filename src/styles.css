@@ -12,7 +12,7 @@
   --danger: #C2415B;
   --radius: 22px;
   --sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
-  --hand: 'Caveat', 'Comic Sans MS', cursive;
+  --hand: 'Crafty Girls', 'Comic Sans MS', cursive;
   font-family: var(--sans);
   color: var(--ink);
   background: var(--bg);
@@ -32,7 +32,7 @@ input { font: inherit; }
 .small { font-size: 13px; }
 .center { text-align: center; }
 .label-mono { font-family: var(--sans); font-size: 14px; font-weight: 400; color: var(--muted); letter-spacing: 0; margin: 12px 2px 0; }
-.brand-hand { font-family: var(--hand); font-weight: 600; font-size: 34px; color: var(--grape); line-height: 1; letter-spacing: 0; }
+.brand-hand { font-family: var(--hand); font-weight: 400; font-size: 28px; color: var(--grape); line-height: 1; letter-spacing: 0; }
 
 .page {
   max-width: 480px; margin: 0 auto; min-height: 100dvh;
