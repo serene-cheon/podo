@@ -123,7 +123,7 @@ export default function Room({ api, user, id }) {
 
       <section className={`team-bunch ${done >= total ? 'complete' : ''}`}>
         <div className="team-row">
-          <b>{done >= total ? '🎉 Team bunch complete!' : 'Our team bunch'}</b>
+          <b>{done >= total ? '🎉 Team podo complete!' : 'Team podo'}</b>
           <span><b>{done}</b> / {total}</span>
         </div>
         <GrapeCluster
