@@ -82,7 +82,7 @@ function MyBunch({ api, user, rooms }) {
     <section className={`my-bunch ${complete ? 'complete' : ''}`}>
       {rooms.map((r) => <MyCheckinsWatcher key={r.id} api={api} user={user} roomId={r.id} onMine={onMine} />)}
       <div className="my-bunch-head">
-        <b>{complete ? '🎉 Your bunch is complete!' : 'My bunch this week'}</b>
+        <b>{complete ? '🎉 My podo complete!' : 'My podo'}</b>
         <small className="muted">{weekLabel(week)}</small>
       </div>
       <GrapeCluster target={total} checkins={filled} size={1} maxWidth={250} />
