@@ -28,7 +28,10 @@ export function weekLabel(key) {
   const s = parse(key)
   const e = new Date(s)
   e.setDate(e.getDate() + 6)
-  return `${s.getMonth() + 1}.${s.getDate()} – ${e.getMonth() + 1}.${e.getDate()}`
+  const m = (d) => d.toLocaleString('en-US', { month: 'short' })
+  return s.getMonth() === e.getMonth()
+    ? `${m(s)} ${s.getDate()} – ${e.getDate()}`
+    : `${m(s)} ${s.getDate()} – ${m(e)} ${e.getDate()}`
 }
 
 export function daysLeft(key) {
@@ -39,6 +42,6 @@ export function daysLeft(key) {
 
 export function timeLabel(ms) {
   const d = new Date(ms)
-  const days = ['일', '월', '화', '수', '목', '금', '토']
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   return `${days[d.getDay()]} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }

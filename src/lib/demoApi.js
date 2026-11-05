@@ -21,8 +21,8 @@ const media = new Map() // checkinId -> objectURL
 const uid = () => Math.random().toString(36).slice(2, 10)
 
 const FRIENDS = [
-  { uid: 'demo-minji', name: '민지', photo: null },
-  { uid: 'demo-junho', name: '준호', photo: null },
+  { uid: 'demo-minji', name: 'Mina', photo: null },
+  { uid: 'demo-junho', name: 'Jun', photo: null },
 ]
 
 function samplePhoto(emoji, from, to) {
@@ -46,7 +46,7 @@ function seedFriends(room) {
         createdAt: now - (k + 1 + i) * 3.6e6 * 7,
         mediaType: withPhoto ? 'photo' : null,
         mediaUrl: withPhoto ? samplePhoto(i ? '🧘' : '🏃', i ? '#FFD3A5' : '#C2E9FB', i ? '#FD6585' : '#A18CD1') : null,
-        note: withPhoto ? (i ? '아침 요가 완료' : '한강 5km!') : '',
+        note: withPhoto ? (i ? 'Morning yoga done' : 'River run 5km!') : '',
       })
     }
   })
@@ -56,7 +56,7 @@ export default {
   mode: 'demo',
 
   onAuth: (cb) => sub(() => cb(db.user)),
-  async signIn() { db.user = { uid: 'me', name: '나', photo: null }; save() },
+  async signIn() { db.user = { uid: 'me', name: 'Me', photo: null }; save() },
   async signOut() { db.user = null; save() },
 
   watchMyRooms: (me, cb) => sub(() =>
@@ -78,7 +78,7 @@ export default {
 
   async joinRoom(user, id) {
     const r = db.rooms[id]
-    if (!r) throw new Error('방을 찾을 수 없어요')
+    if (!r) throw new Error('Room not found')
     if (!r.memberIds.includes(user.uid)) {
       db.rooms[id] = { ...r, memberIds: [...r.memberIds, user.uid], members: { ...r.members, [user.uid]: { name: user.name, photo: user.photo } } }
       save()

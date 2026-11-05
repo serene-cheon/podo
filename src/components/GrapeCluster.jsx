@@ -51,7 +51,7 @@ export default function GrapeCluster({ target, checkins, size = 1, canAdd, onAdd
       width={(width + 8) * size}
       height={height * size}
       role="img"
-      aria-label={`포도 ${filled}/${target}`}
+      aria-label={`Grapes ${filled}/${target}`}
     >
       <defs>
         <radialGradient id={`g${gid}`} cx="35%" cy="30%" r="75%">
@@ -75,7 +75,7 @@ export default function GrapeCluster({ target, checkins, size = 1, canAdd, onAdd
             onClick={handle}
             className={`grape ${isFilled ? 'on' : 'off'} ${isNext ? 'next' : ''} ${handle ? 'tap' : ''}`}
             role={handle ? 'button' : undefined}
-            aria-label={isNext ? '포도알 붙이기' : undefined}
+            aria-label={isNext ? 'Add a grape' : undefined}
           >
             {isFilled ? (
               <g className={i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>

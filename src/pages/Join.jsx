@@ -14,32 +14,32 @@ export default function Join({ api, user, id }) {
 
   async function join() {
     setBusy(true)
-    try { await api.joinRoom(user, id) } catch (e) { toast('참여 실패: ' + (e.message || e)); setBusy(false) }
+    try { await api.joinRoom(user, id) } catch (e) { toast('Could not join: ' + (e.message || e)); setBusy(false) }
   }
 
   return (
     <main className="page center-page">
-      {room === undefined && <p className="muted">불러오는 중…</p>}
+      {room === undefined && <p className="muted">Loading…</p>}
       {room === null && (
         <>
           <div className="empty-emoji">🥲</div>
-          <p>방 코드 <b>{id}</b>를 찾을 수 없어요</p>
-          <a className="btn ghost" href="#/">홈으로</a>
+          <p>No room found for code <b>{id}</b></p>
+          <a className="btn ghost" href="#/">Go home</a>
         </>
       )}
       {room && (
         <div className="join-card">
-          <p className="muted">초대받은 방</p>
+          <p className="muted">You're invited to</p>
           <h1>{room.name}</h1>
-          <p className="goal-pill">🎯 {room.goal} · 주 {room.target}회</p>
+          <p className="goal-pill">🎯 {room.goal} · {room.target}×/week</p>
           <div className="stack big">
             {room.memberIds.map((m) => <Avatar key={m} {...room.members[m]} size={36} />)}
           </div>
-          <p className="muted small">{room.memberIds.length}명이 함께하고 있어요</p>
+          <p className="muted small">{room.memberIds.length} {room.memberIds.length === 1 ? 'person is' : 'people are'} in</p>
           {room.memberIds.length >= MAX_MEMBERS
-            ? <p>방이 가득 찼어요 ({MAX_MEMBERS}명)</p>
-            : <button className="btn primary block" onClick={join} disabled={busy}>{busy ? '참여 중…' : '🍇 참여하기'}</button>}
-          <a className="muted small" href="#/">취소</a>
+            ? <p>This room is full ({MAX_MEMBERS} people)</p>
+            : <button className="btn primary block" onClick={join} disabled={busy}>{busy ? 'Joining…' : '🍇 Join'}</button>}
+          <a className="muted small" href="#/">Cancel</a>
         </div>
       )}
     </main>

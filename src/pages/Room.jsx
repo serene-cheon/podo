@@ -68,33 +68,33 @@ export default function Room({ api, user, id }) {
       await api.addCheckin(user, id, { week: thisWeek, blob, mediaType, note: note.trim() })
       vibrate(20)
       setNote('')
-      if (mine.length + 1 === target) toast('내 포도송이 완성! 🍇')
+      if (mine.length + 1 === target) toast('Your bunch is complete! 🍇')
     } catch (e) {
-      toast('붙이기 실패: ' + (e.message || e))
+      toast('Could not add: ' + (e.message || e))
     } finally {
       setBusy(false)
     }
   }
 
   async function remove(c) {
-    if (!confirm('이 포도알을 뗄까요?')) return
+    if (!confirm('Remove this grape?')) return
     setViewing(null)
-    try { await api.deleteCheckin(id, c) } catch (e) { toast('실패: ' + (e.message || e)) }
+    try { await api.deleteCheckin(id, c) } catch (e) { toast('Failed: ' + (e.message || e)) }
   }
 
   async function invite() {
     const url = `${location.origin}${location.pathname}#/join/${id}`
-    const text = `[podoit] "${room.name}" 방에서 같이 ${room.goal} 해요! 코드: ${id}`
+    const text = `[podoit] Join "${room.name}" and let's ${room.goal} together! Code: ${id}`
     try {
-      if (navigator.share) await navigator.share({ title: 'podoit 초대', text, url })
-      else { await navigator.clipboard.writeText(`${text}\n${url}`); toast('초대 링크를 복사했어요') }
+      if (navigator.share) await navigator.share({ title: 'podoit invite', text, url })
+      else { await navigator.clipboard.writeText(`${text}\n${url}`); toast('Invite link copied') }
     } catch { /* 공유 취소 */ }
   }
 
-  if (room === undefined) return <main className="page center-page"><p className="muted">불러오는 중…</p></main>
+  if (room === undefined) return <main className="page center-page"><p className="muted">Loading…</p></main>
   if (room === null) return (
     <main className="page center-page">
-      <div className="empty-emoji">🥲</div><p>방을 찾을 수 없어요</p><a className="btn ghost" href="#/">홈으로</a>
+      <div className="empty-emoji">🥲</div><p>Room not found</p><a className="btn ghost" href="#/">Go home</a>
     </main>
   )
   if (!isMember) return null
@@ -105,26 +105,26 @@ export default function Room({ api, user, id }) {
   return (
     <main className="page room">
       <header className="topbar">
-        <a className="icon-btn" href="#/" aria-label="뒤로">←</a>
+        <a className="icon-btn" href="#/" aria-label="Back">←</a>
         <h1 className="title">{room.name}</h1>
-        <button className="btn small ghost" onClick={invite}>초대</button>
+        <button className="btn small ghost" onClick={invite}>Invite</button>
       </header>
 
-      <div className="goal-pill">🎯 {room.goal} · 주 {target}회</div>
+      <div className="goal-pill">🎯 {room.goal} · {target}×/week</div>
 
       <nav className="week-nav">
-        <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="지난 주">‹</button>
-        <span>{weekLabel(week)}{isCurrent ? ' · 이번 주' : ''}</span>
-        <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="다음 주">›</button>
+        <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="Previous week">‹</button>
+        <span>{weekLabel(week)}{isCurrent ? ' · this week' : ''}</span>
+        <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="Next week">›</button>
       </nav>
 
       <section className={`team ${done >= total ? 'complete' : ''}`}>
         <div className="team-row">
-          <b>{done >= total ? '🎉 팀 포도송이 완성!' : '팀 포도'}</b>
+          <b>{done >= total ? '🎉 Team bunch complete!' : 'Team grapes'}</b>
           <span><b>{done}</b> / {total}</span>
         </div>
         <div className="bar"><span style={{ width: `${pct}%` }} /></div>
-        {isCurrent && done < total && <small className="muted">{daysLeft(week)}일 남았어요 · 다 같이 채워봐요</small>}
+        {isCurrent && done < total && <small className="muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · let's fill it together</small>}
       </section>
 
       <section className="me">
@@ -137,9 +137,9 @@ export default function Room({ api, user, id }) {
           onOpen={setViewing}
         />
         <p className="me-label">
-          {busy ? '붙이는 중…'
-            : mine.length >= target ? '이번 주 내 송이 완성 🍇'
-            : isCurrent ? `+ 를 눌러 포도알 붙이기 (${mine.length}/${target})`
+          {busy ? 'Adding…'
+            : mine.length >= target ? 'Your bunch is done this week 🍇'
+            : isCurrent ? `Tap + to add a grape (${mine.length}/${target})`
             : `${mine.length}/${target}`}
         </p>
       </section>
@@ -161,7 +161,7 @@ export default function Room({ api, user, id }) {
 
       {moments.length > 0 && (
         <section>
-          <h2 className="section-title">이번 주 모먼트</h2>
+          <h2 className="section-title">This week's moments</h2>
           <div className="moments">
             {moments.map((c) => (
               <button key={c.id} className="moment" onClick={() => setViewing(c)}>
@@ -178,15 +178,15 @@ export default function Room({ api, user, id }) {
         </section>
       )}
 
-      <p className="room-code muted small">방 코드 <b>{id}</b></p>
+      <p className="room-code muted small">Room code <b>{id}</b></p>
 
       {addOpen && (
-        <Sheet title="포도알 붙이기 🍇" onClose={() => setAddOpen(false)}>
-          <input className="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="한 줄 남기기 (선택)" maxLength={60} />
+        <Sheet title="Add a grape 🍇" onClose={() => setAddOpen(false)}>
+          <input className="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note (optional)" maxLength={60} />
           <div className="add-options">
-            <button onClick={() => setCamera('photo')}><span>📸</span>사진</button>
-            <button onClick={() => setCamera('video')}><span>🎬</span>3초 영상</button>
-            <button onClick={() => add()}><span>🍇</span>그냥 붙이기</button>
+            <button onClick={() => setCamera('photo')}><span>📸</span>Photo</button>
+            <button onClick={() => setCamera('video')}><span>🎬</span>3s video</button>
+            <button onClick={() => add()}><span>🍇</span>Just add</button>
           </div>
         </Sheet>
       )}

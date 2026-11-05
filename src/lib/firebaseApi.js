@@ -11,7 +11,7 @@ import {
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { makeRoomCode } from './code.js'
 
-const toUser = (u) => u && { uid: u.uid, name: u.displayName || '이름없음', photo: u.photoURL || null }
+const toUser = (u) => u && { uid: u.uid, name: u.displayName || 'No name', photo: u.photoURL || null }
 
 export function createFirebaseApi(config) {
   const app = initializeApp(config)
@@ -77,7 +77,7 @@ export function createFirebaseApi(config) {
         })
         if (created) return id
       }
-      throw new Error('방 코드를 만들지 못했어요. 다시 시도해 주세요.')
+      throw new Error("Couldn't create a room code. Please try again.")
     },
 
     async joinRoom(user, id) {

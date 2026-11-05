@@ -53,7 +53,7 @@ export default function Camera({ initialMode = 'photo', onDone, onClose }) {
         streamRef.current = s
         videoRef.current.srcObject = s // 첫 프레임이 오면 onLoadedData 에서 ready
       })
-      .catch(() => setError('카메라를 열 수 없어요. 권한을 확인해 주세요.'))
+      .catch(() => setError("Couldn't open the camera. Please check permissions."))
     return () => {
       cancelled = true
       streamRef.current?.getTracks().forEach((t) => t.stop())
@@ -73,7 +73,7 @@ export default function Camera({ initialMode = 'photo', onDone, onClose }) {
 
   function recordClip() {
     const type = pickVideoType()
-    if (type === null) return setError('이 브라우저는 영상 녹화를 지원하지 않아요.')
+    if (type === null) return setError("This browser doesn't support video recording.")
     const rec = new MediaRecorder(streamRef.current, { ...(type && { mimeType: type }), videoBitsPerSecond: 1_500_000 })
     const chunks = []
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data)
@@ -90,25 +90,25 @@ export default function Camera({ initialMode = 'photo', onDone, onClose }) {
     const f = e.target.files?.[0]
     if (!f) return
     if (f.type.startsWith('image/')) setBlob(await compressImageFile(f), 'photo')
-    else if (f.size > 8 * 1024 * 1024) setError('영상이 너무 커요 (최대 8MB)')
+    else if (f.size > 8 * 1024 * 1024) setError('Video is too large (max 8MB)')
     else setBlob(f, 'video')
   }
 
   return (
     <div className="camera">
-      <button className="cam-close" onClick={onClose} aria-label="닫기">✕</button>
+      <button className="cam-close" onClick={onClose} aria-label="Close">✕</button>
 
       <div className="cam-stage">
         {supported && !error && (
           <video ref={videoRef} autoPlay playsInline muted onLoadedData={() => setReady(true)} className={facing === 'user' ? 'mirror' : ''} hidden={!!result} />
         )}
-        {result?.mediaType === 'photo' && <img src={result.url} alt="미리보기" />}
+        {result?.mediaType === 'photo' && <img src={result.url} alt="Preview" />}
         {result?.mediaType === 'video' && <video src={result.url} autoPlay loop playsInline muted />}
         {(error || !supported) && !result && (
           <div className="cam-fallback">
-            <p>{error || '여기서는 카메라를 바로 열 수 없어요.'}</p>
+            <p>{error || "Can't open the camera here."}</p>
             <label className="btn">
-              {mode === 'photo' ? '사진 선택/촬영' : '영상 선택/촬영'}
+              {mode === 'photo' ? 'Choose / take photo' : 'Choose / record video'}
               <input type="file" hidden accept={mode === 'photo' ? 'image/*' : 'video/*'} capture="environment" onChange={onFile} />
             </label>
           </div>
@@ -118,14 +118,14 @@ export default function Camera({ initialMode = 'photo', onDone, onClose }) {
 
       {result ? (
         <div className="cam-controls">
-          <button className="btn ghost light" onClick={() => setResult(null)}>다시 찍기</button>
-          <button className="btn primary" onClick={() => onDone({ blob: result.blob, mediaType: result.mediaType })}>🍇 붙이기</button>
+          <button className="btn ghost light" onClick={() => setResult(null)}>Retake</button>
+          <button className="btn primary" onClick={() => onDone({ blob: result.blob, mediaType: result.mediaType })}>🍇 Stick it</button>
         </div>
       ) : (
         <>
           <div className="cam-modes">
-            <button className={mode === 'photo' ? 'on' : ''} onClick={() => setMode('photo')} disabled={recording}>사진</button>
-            <button className={mode === 'video' ? 'on' : ''} onClick={() => setMode('video')} disabled={recording}>3초 영상</button>
+            <button className={mode === 'photo' ? 'on' : ''} onClick={() => setMode('photo')} disabled={recording}>Photo</button>
+            <button className={mode === 'video' ? 'on' : ''} onClick={() => setMode('video')} disabled={recording}>3s video</button>
           </div>
           <div className="cam-controls">
             <span style={{ width: 52 }} />
@@ -133,9 +133,9 @@ export default function Camera({ initialMode = 'photo', onDone, onClose }) {
               className={`shutter ${mode} ${recording ? 'recording' : ''}`}
               disabled={!ready || recording}
               onClick={mode === 'photo' ? takePhoto : recordClip}
-              aria-label={mode === 'photo' ? '사진 찍기' : '3초 녹화'}
+              aria-label={mode === 'photo' ? 'Take photo' : 'Record 3 seconds'}
             />
-            <button className="cam-flip" disabled={!ready || recording} onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))} aria-label="카메라 전환">⟲</button>
+            <button className="cam-flip" disabled={!ready || recording} onClick={() => setFacing((f) => (f === 'user' ? 'environment' : 'user'))} aria-label="Flip camera">⟲</button>
           </div>
         </>
       )}

@@ -14,25 +14,25 @@ export default function Home({ api, user }) {
     <main className="page">
       <header className="topbar">
         <h1 className="brand"><img src="/icon.svg" alt="" width="28" height="28" /> podoit</h1>
-        <button className="icon-btn" onClick={() => confirm('로그아웃할까요?') && api.signOut()} aria-label="로그아웃">
+        <button className="icon-btn" onClick={() => confirm('Sign out?') && api.signOut()} aria-label="Sign out">
           <Avatar name={user.name} photo={user.photo} size={32} />
         </button>
       </header>
-      {isDemo && <p className="demo-banner">데모 모드 · 방을 만들면 가상 친구 2명이 함께 들어와요</p>}
+      {isDemo && <p className="demo-banner">Demo mode · two pretend friends join any room you create</p>}
 
       <section className="room-list">
-        {rooms === null && <p className="muted center">불러오는 중…</p>}
+        {rooms === null && <p className="muted center">Loading…</p>}
         {rooms?.length === 0 && (
           <div className="empty">
             <div className="empty-emoji">🍇</div>
-            <p>아직 방이 없어요.<br />방을 만들고 친구를 초대해 보세요!</p>
+            <p>No rooms yet.<br />Create one and invite your friends!</p>
           </div>
         )}
         {rooms?.map((r) => (
           <a key={r.id} className="room-card" href={`#/room/${r.id}`}>
             <div>
               <b>{r.name}</b>
-              <span className="muted">🎯 {r.goal} · 주 {r.target}회</span>
+              <span className="muted">🎯 {r.goal} · {r.target}×/week</span>
             </div>
             <div className="stack">
               {r.memberIds.slice(0, 4).map((id) => <Avatar key={id} {...r.members[id]} size={26} />)}
@@ -43,8 +43,8 @@ export default function Home({ api, user }) {
       </section>
 
       <div className="bottom-actions">
-        <button className="btn ghost" onClick={() => setSheet('join')}>코드로 참여</button>
-        <button className="btn primary" onClick={() => setSheet('create')}>+ 방 만들기</button>
+        <button className="btn ghost" onClick={() => setSheet('join')}>Join with code</button>
+        <button className="btn primary" onClick={() => setSheet('create')}>+ New room</button>
       </div>
 
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
@@ -65,27 +65,27 @@ function CreateSheet({ api, user, onClose }) {
       const id = await api.createRoom(user, { name: name.trim(), goal: goal.trim(), target })
       location.hash = `#/room/${id}`
     } catch (err) {
-      toast('만들기 실패: ' + (err.message || err))
+      toast('Could not create: ' + (err.message || err))
       setBusy(false)
     }
   }
   return (
-    <Sheet title="방 만들기" onClose={onClose}>
+    <Sheet title="New room" onClose={onClose}>
       <form onSubmit={submit} className="form">
-        <label>방 이름
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예) 갓생 크루" maxLength={30} required autoFocus />
+        <label>Room name
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Glow-up crew" maxLength={30} required autoFocus />
         </label>
-        <label>함께할 목표
-          <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="예) 운동 30분" maxLength={40} required />
+        <label>Shared goal
+          <input value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="e.g. Work out 30 min" maxLength={40} required />
         </label>
-        <div className="label">일주일에 몇 번?</div>
+        <div className="label">How many times a week?</div>
         <div className="chips">
           {[1, 2, 3, 4, 5, 6, 7].map((n) => (
             <button type="button" key={n} className={n === target ? 'on' : ''} onClick={() => setTarget(n)}>{n}</button>
           ))}
         </div>
-        <p className="muted small">한 명당 매주 포도알 {target}개를 채우면 포도송이 완성!</p>
-        <button className="btn primary block" disabled={busy}>{busy ? '만드는 중…' : '만들기'}</button>
+        <p className="muted small">Each person fills {target} grape{target > 1 ? 's' : ''} a week to finish their bunch!</p>
+        <button className="btn primary block" disabled={busy}>{busy ? 'Creating…' : 'Create'}</button>
       </form>
     </Sheet>
   )
@@ -94,10 +94,10 @@ function CreateSheet({ api, user, onClose }) {
 function JoinSheet({ onClose }) {
   const [code, setCode] = useState('')
   return (
-    <Sheet title="코드로 참여" onClose={onClose}>
+    <Sheet title="Join with code" onClose={onClose}>
       <form className="form" onSubmit={(e) => { e.preventDefault(); location.hash = `#/join/${code}` }}>
         <input className="code-input" value={code} onChange={(e) => setCode(normalizeCode(e.target.value))} placeholder="ABC123" autoFocus inputMode="text" autoCapitalize="characters" />
-        <button className="btn primary block" disabled={code.length !== 6}>다음</button>
+        <button className="btn primary block" disabled={code.length !== 6}>Next</button>
       </form>
     </Sheet>
   )
