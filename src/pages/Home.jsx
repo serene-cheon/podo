@@ -1,14 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import GrapeCluster from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
 import { toast } from '../components/Toast.jsx'
 import { normalizeCode } from '../lib/code.js'
 import { isDemo } from '../lib/api.js'
+import { weekKey, weekLabel, daysLeft } from '../lib/week.js'
 
 export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
   const [sheet, setSheet] = useState(null) // 'create' | 'join'
+  const [counts, setCounts] = useState({}) // roomId -> 이번 주 내 포도알 수
   useEffect(() => api.watchMyRooms(user.uid, setRooms), [api, user.uid])
+  const onCount = useCallback((id, n) => setCounts((c) => (c[id] === n ? c : { ...c, [id]: n })), [])
 
   return (
     <main className="page">
@@ -28,18 +32,8 @@ export default function Home({ api, user }) {
             <p>No rooms yet.<br />Create one and invite your friends!</p>
           </div>
         )}
-        {rooms?.map((r) => (
-          <a key={r.id} className="room-card" href={`#/room/${r.id}`}>
-            <div>
-              <b>{r.name}</b>
-              <span className="muted">🎯 {r.goal} · {r.target}×/week</span>
-            </div>
-            <div className="stack">
-              {r.memberIds.slice(0, 4).map((id) => <Avatar key={id} {...r.members[id]} size={26} />)}
-              {r.memberIds.length > 4 && <span className="more">+{r.memberIds.length - 4}</span>}
-            </div>
-          </a>
-        ))}
+        {rooms?.length > 0 && <WeekSummary rooms={rooms} counts={counts} />}
+        {rooms?.map((r) => <RoomCard key={r.id} api={api} user={user} room={r} onCount={onCount} />)}
       </section>
 
       <div className="bottom-actions">
@@ -50,6 +44,55 @@ export default function Home({ api, user }) {
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} />}
     </main>
+  )
+}
+
+// 이번 주 내 포도알 요약 (모든 방 합계)
+function WeekSummary({ rooms, counts }) {
+  const week = weekKey()
+  const total = rooms.reduce((s, r) => s + r.target, 0)
+  const done = rooms.reduce((s, r) => s + Math.min(counts[r.id] || 0, r.target), 0)
+  const bunches = rooms.filter((r) => (counts[r.id] || 0) >= r.target).length
+  const left = daysLeft(week)
+  return (
+    <div className="week-summary">
+      <div className="team-row">
+        <b>Your week</b>
+        <span><b>{done}</b> / {total} grapes</span>
+      </div>
+      <div className="bar"><span style={{ width: `${total ? (done / total) * 100 : 0}%` }} /></div>
+      <small className="muted">
+        {weekLabel(week)} · {bunches} of {rooms.length} {rooms.length === 1 ? 'bunch' : 'bunches'} complete
+        {done < total && ` · ${left} day${left === 1 ? '' : 's'} left`}
+      </small>
+    </div>
+  )
+}
+
+// 방 카드: 이번 주 내 포도송이를 미니로 보여줌
+function RoomCard({ api, user, room: r, onCount }) {
+  const [mine, setMine] = useState([])
+  useEffect(() => api.watchCheckins(r.id, weekKey(), (list) => {
+    const m = list.filter((c) => c.uid === user.uid).sort((a, b) => a.createdAt - b.createdAt)
+    setMine(m)
+    onCount(r.id, m.length)
+  }), [api, r.id, user.uid, onCount])
+  const complete = mine.length >= r.target
+  return (
+    <a className={`room-card ${complete ? 'complete' : ''}`} href={`#/room/${r.id}`}>
+      <div className="room-info">
+        <b>{r.name}</b>
+        <span className="muted">🎯 {r.goal} · {r.target}×/week</span>
+        <div className="stack">
+          {r.memberIds.slice(0, 5).map((id) => <Avatar key={id} {...r.members[id]} size={22} />)}
+          {r.memberIds.length > 5 && <span className="more">+{r.memberIds.length - 5}</span>}
+        </div>
+      </div>
+      <div className="room-bunch">
+        <GrapeCluster target={r.target} checkins={mine} size={0.62} />
+        <small>{complete ? 'Done 🍇' : `${Math.min(mine.length, r.target)}/${r.target}`}</small>
+      </div>
+    </a>
   )
 }
 
