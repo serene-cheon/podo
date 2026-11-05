@@ -21,12 +21,13 @@ export function loadApi() {
 
 /*
   API 모양 (두 구현이 똑같이 따릅니다)
-  user    = { uid, name, photo }
+  user    = { uid, name, photo, email }
   room    = { id, name, goal, target, ownerId, memberIds: [uid], members: { [uid]: {name, photo} } }
   checkin = { id, uid, week, createdAt(ms), mediaType: 'photo'|'video'|null, mediaUrl, note }
 
   onAuth(cb) -> unsubscribe
   signIn(), signOut()
+  updateName(user, name)                         닉네임 변경 (모든 방에 반영)
   watchMyRooms(uid, cb) -> unsubscribe
   watchRoom(roomId, cb) -> unsubscribe            cb(null) 이면 방이 없음
   createRoom(user, {name, goal, target}) -> roomId

@@ -10,14 +10,14 @@ import { SproutDoodle } from '../components/Doodle.jsx'
 
 export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
-  const [sheet, setSheet] = useState(null) // 'create' | 'join'
+  const [sheet, setSheet] = useState(null) // 'create' | 'join' | 'profile'
   useEffect(() => api.watchMyRooms(user.uid, setRooms), [api, user.uid])
 
   return (
     <main className="page">
       <header className="topbar">
         <h1 className="brand-hand">podoit</h1>
-        <button className="icon-btn" onClick={() => confirm('Sign out?') && api.signOut()} aria-label="Sign out">
+        <button className="icon-btn" onClick={() => setSheet('profile')} aria-label="Profile">
           <Avatar name={user.name} photo={user.photo} size={32} />
         </button>
       </header>
@@ -57,6 +57,7 @@ export default function Home({ api, user }) {
 
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} />}
+      {sheet === 'profile' && <ProfileSheet api={api} user={user} onClose={() => setSheet(null)} />}
     </main>
   )
 }
@@ -116,6 +117,49 @@ function WeekDots({ checkins }) {
       </div>
       <p className="mono muted">every day counts</p>
     </div>
+  )
+}
+
+// 프로필: 계정 정보 + 닉네임 변경 + 로그아웃
+function ProfileSheet({ api, user, onClose }) {
+  const [name, setName] = useState(user.name)
+  const [busy, setBusy] = useState(false)
+  const trimmed = name.trim()
+  async function save(e) {
+    e.preventDefault()
+    if (!trimmed || trimmed === user.name) return onClose()
+    setBusy(true)
+    try {
+      await api.updateName(user, trimmed)
+      toast('Nickname saved')
+      onClose()
+    } catch (err) {
+      toast('Could not save: ' + (err.message || err))
+      setBusy(false)
+    }
+  }
+  return (
+    <Sheet title="Profile" onClose={onClose}>
+      <form className="form" onSubmit={save}>
+        <div className="profile-head">
+          <Avatar name={trimmed || user.name} photo={user.photo} size={64} />
+          <div>
+            <b>{trimmed || user.name}</b>
+            <span className="mono muted">{user.email || 'no email'}</span>
+          </div>
+        </div>
+        <label>nickname
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} required placeholder="what friends will see" />
+        </label>
+        <p className="mono muted small">shown on your grapes and in every room you're in</p>
+        <div className="account-row">
+          <span className="mono muted">account</span>
+          <span className="mono">{isDemo ? 'demo account' : 'signed in with Google'}</span>
+        </div>
+        <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'saving…' : 'save'}</button>
+        <button type="button" className="btn danger block" onClick={() => confirm('Sign out?') && api.signOut()}>sign out</button>
+      </form>
+    </Sheet>
   )
 }
 

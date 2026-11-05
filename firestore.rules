@@ -18,6 +18,15 @@ service cloud.firestore {
         && request.resource.data.target is int
         && request.resource.data.target >= 1 && request.resource.data.target <= 7;
 
+      // 닉네임 변경: 멤버는 members 안의 내 정보만 수정 가능
+      allow update: if signedIn()
+        && me() in resource.data.memberIds
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([me()])
+        && request.resource.data.members[me()].name is string
+        && request.resource.data.members[me()].name.size() >= 1
+        && request.resource.data.members[me()].name.size() <= 20;
+
       // 참여: 나 자신만 멤버로 추가 가능 (최대 20명)
       allow update: if signedIn()
         && !(me() in resource.data.memberIds)

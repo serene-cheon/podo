@@ -56,8 +56,16 @@ export default {
   mode: 'demo',
 
   onAuth: (cb) => sub(() => cb(db.user)),
-  async signIn() { db.user = { uid: 'me', name: 'Me', photo: null }; save() },
+  async signIn() { db.user = { uid: 'me', name: 'Me', photo: null, email: 'demo@podoit.app' }; save() },
   async signOut() { db.user = null; save() },
+
+  async updateName(user, name) {
+    db.user = { ...db.user, name }
+    for (const r of Object.values(db.rooms)) {
+      if (r.members[user.uid]) db.rooms[r.id] = { ...r, members: { ...r.members, [user.uid]: { ...r.members[user.uid], name } } }
+    }
+    save()
+  },
 
   watchMyRooms: (me, cb) => sub(() =>
     cb(Object.values(db.rooms).filter((r) => r.memberIds.includes(me)).sort((a, b) => b.createdAt - a.createdAt))),

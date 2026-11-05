@@ -1,17 +1,17 @@
 import { initializeApp } from 'firebase/app'
 import {
-  getAuth, GoogleAuthProvider, onAuthStateChanged,
+  getAuth, GoogleAuthProvider, onAuthStateChanged, updateProfile,
   signInWithPopup, signInWithRedirect, signOut,
 } from 'firebase/auth'
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection, query, where, onSnapshot, runTransaction,
-  updateDoc, addDoc, deleteDoc, arrayUnion, serverTimestamp,
+  updateDoc, addDoc, deleteDoc, arrayUnion, serverTimestamp, getDocs, writeBatch,
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { makeRoomCode } from './code.js'
 
-const toUser = (u) => u && { uid: u.uid, name: u.displayName || 'No name', photo: u.photoURL || null }
+const toUser = (u) => u && { uid: u.uid, name: u.displayName || 'No name', photo: u.photoURL || null, email: u.email || null }
 
 export function createFirebaseApi(config) {
   const app = initializeApp(config)
@@ -20,12 +20,28 @@ export function createFirebaseApi(config) {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   })
   const storage = getStorage(app)
+  const authCbs = new Set() // 닉네임을 바꾸면 화면에 바로 반영하려고
 
 
   return {
     mode: 'firebase',
 
-    onAuth: (cb) => onAuthStateChanged(auth, (u) => cb(toUser(u))),
+    onAuth(cb) {
+      authCbs.add(cb)
+      const off = onAuthStateChanged(auth, (u) => cb(toUser(u)))
+      return () => { authCbs.delete(cb); off() }
+    },
+
+    // 닉네임 변경: 계정 이름 + 내가 속한 모든 방의 멤버 이름
+    async updateName(user, name) {
+      await updateProfile(auth.currentUser, { displayName: name })
+      const snap = await getDocs(query(collection(db, 'rooms'), where('memberIds', 'array-contains', user.uid)))
+      const batch = writeBatch(db)
+      snap.docs.forEach((d) => batch.update(d.ref, { [`members.${user.uid}.name`]: name }))
+      await batch.commit()
+      const u = toUser(auth.currentUser)
+      authCbs.forEach((cb) => cb(u))
+    },
 
     async signIn() {
       const provider = new GoogleAuthProvider()

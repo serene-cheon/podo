@@ -227,3 +227,11 @@ input { font: inherit; }
 @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
 .label-mono + .moments { margin-top: 8px; }
+
+/* profile */
+.profile-head { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+.profile-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.profile-head b { font-size: 22px; font-weight: 500; letter-spacing: -.02em; }
+.profile-head .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); }
+.account-row .mono:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
