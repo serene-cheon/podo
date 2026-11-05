@@ -141,7 +141,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                   <ellipse cx={-p.r * 0.35} cy={-p.r * 0.38} rx={p.r * 0.28} ry={p.r * 0.17} fill="#fff" opacity=".55" filter={`url(#w${gid})`} />
                 </g>
                 {team && (
-                  <text y="4.5" textAnchor="middle" className="grape-label" fill={other ? '#8A4C7C' : '#fff'}>
+                  <text y="4.5" textAnchor="middle" className="grape-label" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="14" fontWeight="500" fill={other ? '#8A4C7C' : '#fff'}>
                     {other ? [...(labelOf?.(c.uid) || '?')][0].toLowerCase() : 'me'}
                   </text>
                 )}

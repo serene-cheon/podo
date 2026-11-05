@@ -7,6 +7,7 @@ import Viewer from '../components/Viewer.jsx'
 import Confetti from '../components/Confetti.jsx'
 import { toast } from '../components/Toast.jsx'
 import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
+import { makeWeekImage, saveImage } from '../lib/weekImage.js'
 import { weekKey, shiftWeek, weekLabel, daysLeft } from '../lib/week.js'
 
 const vibrate = (p) => navigator.vibrate?.(p)
@@ -23,6 +24,8 @@ export default function Room({ api, user, id }) {
   const [viewing, setViewing] = useState(null)
   const [party, setParty] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const bunchRef = useRef(null)
 
   useEffect(() => api.watchRoom(id, setRoom), [api, id])
   useEffect(() => api.watchCheckins(id, week, (list) => setData({ week, list })), [api, id, week])
@@ -86,6 +89,29 @@ export default function Room({ api, user, id }) {
 
   const inviteUrl = `${location.origin}${location.pathname}#/join/${id}`
 
+  // 한 주 포도송이를 이미지로 저장
+  async function saveWeek() {
+    setSaving(true)
+    try {
+      const blob = await makeWeekImage({
+        svgEl: bunchRef.current.querySelector('svg.cluster'),
+        roomName: room.name,
+        goal: room.goal,
+        target,
+        weekLabel: weekLabel(week).toLowerCase(),
+        done,
+        total,
+        members: members.map((m) => ({ name: m.name, n: Math.min(byUser[m.uid]?.length || 0, target), isMe: m.uid === user.uid })),
+      })
+      const r = await saveImage(blob, `podoit-${room.name.replace(/[^\w가-힣-]+/g, '-')}-${week}.png`)
+      if (r === 'downloaded') toast('Image saved')
+    } catch (e) {
+      toast("Couldn't make the image: " + (e.message || e))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   async function copy(text, msg) {
     try { await navigator.clipboard.writeText(text); toast(msg) } catch { toast("Couldn't copy") }
   }
@@ -126,7 +152,7 @@ export default function Room({ api, user, id }) {
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="Next week">›</button>
       </nav>
 
-      <section className={`team-bunch ${done >= total ? 'complete' : ''}`}>
+      <section ref={bunchRef} className={`team-bunch ${done >= total ? 'complete' : ''}`}>
         <div className="my-bunch-head">
           <h2>{done >= total ? 'Team podo is complete!' : 'Team podo'}</h2>
           <p className="big-count small"><b>{done}</b><span>/{total}</span></p>
@@ -153,6 +179,11 @@ export default function Room({ api, user, id }) {
             : `tap + to add your grape · you ${mine.length}/${target}`}
         </p>
         {isCurrent && done < total && <small className="mono muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · fill it together</small>}
+        {total > 0 && (done >= total || !isCurrent) && (
+          <button className="btn ghost save-img" onClick={saveWeek} disabled={saving}>
+            {saving ? 'making image…' : 'save as image ↓'}
+          </button>
+        )}
       </section>
 
       <h2 className="label-mono">members</h2>

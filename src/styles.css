@@ -235,3 +235,4 @@ input { font: inherit; }
 .profile-head .mono { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); }
 .account-row .mono:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.save-img { margin-top: 6px; padding: 10px 18px; }
