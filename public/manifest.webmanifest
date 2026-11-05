@@ -1,6 +1,6 @@
 {
-  "name": "포도알 — 함께 채우는 이번 주 목표",
-  "short_name": "포도알",
+  "name": "podoit — 함께 채우는 이번 주 목표",
+  "short_name": "podoit",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FBF7F2",
