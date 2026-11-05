@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { Fragment, useEffect, useId, useRef, useState } from 'react'
 
 // 목표 횟수(1~7)별 포도송이 모양: 위에서부터 각 줄에 몇 알인지
 const LAYOUTS = {
@@ -39,17 +39,18 @@ function layout(target) {
   return { pts, width, height: TOP + rows.length * DY + R / 2 + 6 }
 }
 
-// 수채화 색: [가운데, 가장자리]
-const MINE = ['#C8B2F2', '#7F5FCF']
-const OTHER = ['#FBE3F1', '#E3A9D3']
-const INK = '#5A3A9E'
+import { GOAL_COLORS, colorOf } from '../lib/colors.js'
+
+const INK = '#5A3A9E' // 줄기·빈 알 손그림 선
 
 /**
  * checkins: 시간순 체크인. 앞에서부터 포도알을 채웁니다.
  * canAdd: 다음 빈 포도알을 눌러 붙일 수 있는지
- * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 보라 + "me", 친구 알은 핑크 라일락 + 이름 첫 글자
+ * color: 골 색 번호 (GOAL_COLORS). colorOfCheckin(c) 를 주면 알마다 다른 색 (홈: 여러 골 섞기)
+ * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 진하게 + "me", 친구 알은 연하게 + 이름 첫 글자
+ * tint: 'other' 면 전부 연한 색 (친구 개별 송이)
  */
-export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen, meUid, labelOf, tint }) {
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onOpen, meUid, labelOf, tint, color = 0, colorOfCheckin }) {
   const gid = useId().replace(/:/g, '')
   const { pts, width, height } = layout(target)
   if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
@@ -91,8 +92,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       aria-label={`Grapes ${filled}/${target}`}
     >
       <defs>
-        {wash(`m${gid}`, MINE)}
-        {wash(`o${gid}`, OTHER)}
+        {GOAL_COLORS.map((col, k) => <Fragment key={k}>{wash(`m${k}${gid}`, col.me)}{wash(`o${k}${gid}`, col.friend)}</Fragment>)}
         {wash(`l${gid}`, ['#9FE0BE', '#3FA273'])}
         {/* 번진 가장자리 */}
         <filter id={`w${gid}`} x="-20%" y="-20%" width="140%" height="140%">
@@ -123,7 +123,9 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         const isFilled = i < filled
         const isNext = !isFilled && i === filled && canAdd
         const handle = isFilled ? () => onOpen?.(c) : isNext ? onAdd : undefined
-        const other = team ? c?.uid !== meUid : tint === 'other' // tint: 개별 송이 색 (친구는 핑크)
+        const other = team ? c?.uid !== meUid : tint === 'other'
+        const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
+        const col = colorOf(ci)
         return (
           <g
             key={i}
@@ -136,12 +138,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             {isFilled ? (
               <g className={i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
                 <g transform={`rotate(${p.rot})`}>
-                  <ellipse rx={p.r} ry={p.r * 0.96} fill={`url(#${other ? 'o' : 'm'}${gid})`} filter={`url(#w${gid})`} />
+                  <ellipse rx={p.r} ry={p.r * 0.96} fill={`url(#${other ? 'o' : 'm'}${ci}${gid})`} filter={`url(#w${gid})`} />
                   {/* 물감 얼룩 하이라이트 */}
                   <ellipse cx={-p.r * 0.35} cy={-p.r * 0.38} rx={p.r * 0.28} ry={p.r * 0.17} fill="#fff" opacity=".55" filter={`url(#w${gid})`} />
                 </g>
                 {team && (
-                  <text y="4.5" textAnchor="middle" className="grape-label" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="14" fontWeight="500" fill={other ? '#8A4C7C' : '#fff'}>
+                  <text y="4.5" textAnchor="middle" className="grape-label" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="14" fontWeight="500" fill={other ? col.label : '#fff'}>
                     {other ? [...(labelOf?.(c.uid) || '?')][0].toLowerCase() : 'me'}
                   </text>
                 )}
@@ -154,12 +156,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                 <circle
                   r={p.r - 1.5}
                   fill={isNext ? '#fff' : 'none'}
-                  stroke={INK}
+                  stroke={isNext ? colorOf(color).ink : INK}
                   strokeWidth={isNext ? 1.8 : 1.2}
                   strokeDasharray={isNext ? 'none' : '3 4'}
                   opacity={isNext ? 1 : 0.4}
                 />
-                {isNext && <path d="M-6 0 H6 M0 -6 V6" stroke={INK} strokeWidth="2" strokeLinecap="round" />}
+                {isNext && <path d="M-6 0 H6 M0 -6 V6" stroke={colorOf(color).ink} strokeWidth="2" strokeLinecap="round" />}
               </g>
             )}
           </g>

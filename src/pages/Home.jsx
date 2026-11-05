@@ -85,7 +85,10 @@ function MyBunch({ api, user, rooms }) {
     .sort((a, b) => a.createdAt - b.createdAt)
     .slice(0, goal.target)
   const total = allGoals.reduce((s, x) => s + x.goal.target, 0)
-  const filled = allGoals.flatMap(mineOf).sort((a, b) => a.createdAt - b.createdAt)
+  const colorById = {}
+  const filled = allGoals
+    .flatMap((x) => mineOf(x).map((c) => { colorById[c.id] = x.goal.color; return c }))
+    .sort((a, b) => a.createdAt - b.createdAt)
   const doneGoals = allGoals.filter((x) => mineOf(x).length >= x.goal.target).length
   const left = daysLeft(week)
   const complete = total > 0 && filled.length >= total
@@ -96,7 +99,7 @@ function MyBunch({ api, user, rooms }) {
         <h2>{complete ? 'My podo is complete!' : 'My podo'}</h2>
         <span className="mono muted">{weekLabel(week).toLowerCase()}</span>
       </div>
-      <GrapeCluster target={total} checkins={filled} size={1} maxWidth={240} />
+      <GrapeCluster target={total} checkins={filled} size={1} maxWidth={240} colorOfCheckin={(c) => colorById[c.id] ?? 0} />
       <p className="big-count"><b>{filled.length}</b><span>/{total}</span></p>
       <p className="mono muted">
         {doneGoals} of {allGoals.length} {allGoals.length === 1 ? 'goal' : 'goals'} done
@@ -172,7 +175,7 @@ function ProfileSheet({ api, user, onClose }) {
 
 function CreateSheet({ api, user, onClose }) {
   const [name, setName] = useState('')
-  const [goals, setGoals] = useState(() => [{ id: newGoalId(), title: '', target: 3 }])
+  const [goals, setGoals] = useState(() => [{ id: newGoalId(), title: '', target: 3, color: 0 }])
   const [busy, setBusy] = useState(false)
   const clean = cleanGoals(goals)
   async function submit(e) {

@@ -237,7 +237,8 @@ input { font: inherit; }
 .account-row .mono:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .save-img { margin-top: 6px; padding: 10px 18px; }
 .top-actions { display: flex; align-items: center; gap: 2px; }
-.settings-btn { color: var(--grape); padding: 4px; min-width: 36px; }
+.settings-btn { width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--card); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; flex: none; transition: transform .15s, background .2s; }
+.settings-btn:active { transform: scale(.92) rotate(30deg); background: var(--grape-soft); }
 .form input:disabled { background: var(--card); color: var(--muted); }
 /* goals editor */
 .goals-editor { display: flex; flex-direction: column; gap: 12px; }
@@ -250,15 +251,21 @@ input { font: inherit; }
 .chips.small .mono { margin-left: 4px; white-space: nowrap; font-size: 13px; }
 .add-goal { align-self: flex-start; padding-left: 2px; }
 .sheet { max-height: 92dvh; overflow-y: auto; }
-/* goal tabs */
-.goal-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 2px 18px; }
+/* goal tabs: 이름만, 심플하게 */
+.goal-tabs { display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 4px 18px 2px; }
 .goal-tabs::-webkit-scrollbar { display: none; }
-.goal-tab { flex: none; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; border: 1.5px solid var(--line); background: #fff; border-radius: 16px; padding: 9px 14px; text-align: left; max-width: 180px; }
-.goal-tab b { font-weight: 500; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
-.goal-tab small { font-size: 12px; color: var(--muted); }
-.goal-tab.on { border-color: var(--grape); background: var(--grape-soft); }
-.goal-tab.on b { color: var(--grape); }
-.goal-tab.done small { color: var(--grape); }
+.goal-tab { flex: none; display: inline-flex; align-items: center; gap: 7px; border: 0; background: none; padding: 6px 0; font-size: 16px; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
+.goal-tab i { width: 9px; height: 9px; border-radius: 50%; background: var(--gc); opacity: .45; }
+.goal-tab.on { color: var(--ink); border-bottom-color: var(--gc); }
+.goal-tab.on i { opacity: 1; }
+.page-dots { display: flex; gap: 6px; }
+.page-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background .2s; }
+.team-bunch { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.slide-left { animation: slideL .32s cubic-bezier(.2,.8,.3,1); }
+.slide-right { animation: slideR .32s cubic-bezier(.2,.8,.3,1); }
+@keyframes slideL { from { transform: translateX(46px); opacity: 0; } }
+@keyframes slideR { from { transform: translateX(-46px); opacity: 0; } }
+.goal-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; margin: 0 4px 0 2px; }
 .goal-list { display: flex; flex-direction: column; gap: 4px; align-items: center; }
 /* person sheet */
 button.member { width: 100%; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
@@ -269,3 +276,9 @@ button.member:active { background: var(--grape-soft); }
 .person-bunch { display: flex; flex-direction: column; align-items: center; gap: 4px; background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 12px 8px 14px; text-align: center; }
 .person-bunch b { font-weight: 500; font-size: 15px; }
 .person-bunch.done { border-color: var(--grape-2); }
+/* settings: invite */
+.invite-box { background: #fff; border: 1.5px solid var(--line); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+.invite-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.invite-row .invite-code { margin-top: 6px; font-size: 26px; padding: 10px 16px; letter-spacing: 6px; }
+.invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.invite-actions .btn { padding: 12px 10px; }

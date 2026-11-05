@@ -81,7 +81,7 @@ export async function makeWeekImage(o) {
   // 카운트
   const complete = o.done >= o.total
   ctx.textAlign = 'center'
-  ctx.fillStyle = C.grape
+  ctx.fillStyle = o.colors?.ink || C.grape
   ctx.font = `500 76px ${SANS}`
   const count = `${o.done}`
   const cw = ctx.measureText(count).width
@@ -95,7 +95,7 @@ export async function makeWeekImage(o) {
   ctx.font = `500 40px ${SANS}`
   ctx.fillText(`/${o.total}`, cx + cw, cardY + cardH - 90)
   ctx.textAlign = 'center'
-  ctx.fillStyle = complete ? C.grape : C.muted
+  ctx.fillStyle = complete ? (o.colors?.ink || C.grape) : C.muted
   ctx.font = `400 34px ${SANS}`
   ctx.fillText(complete ? 'team podo complete!' : 'team podo', W / 2, cardY + cardH - 38)
   ctx.textAlign = 'left'
@@ -113,7 +113,7 @@ export async function makeWeekImage(o) {
     const dotsW = o.target * dot + (o.target - 1) * gap
     let dx = W - 72 - 90 - dotsW
     for (let i = 0; i < o.target; i++) {
-      ctx.fillStyle = i < m.n ? (m.isMe ? C.grape2 : C.pink) : C.line
+      ctx.fillStyle = i < m.n ? (m.isMe ? (o.colors?.me || C.grape2) : (o.colors?.friend || C.pink)) : C.line
       ctx.beginPath()
       ctx.arc(dx + dot / 2, y - 11, dot / 2, 0, Math.PI * 2)
       ctx.fill()

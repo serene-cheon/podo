@@ -1,4 +1,5 @@
-import { MAX_GOALS, newGoalId } from '../lib/goals.js'
+import { MAX_GOALS, newGoalId, nextColor } from '../lib/goals.js'
+import { colorOf } from '../lib/colors.js'
 
 // 골 목록 편집: 제목 + 주 몇 번 (최대 5개)
 export default function GoalsEditor({ goals, onChange, disabled }) {
@@ -8,6 +9,7 @@ export default function GoalsEditor({ goals, onChange, disabled }) {
       {goals.map((g, i) => (
         <div key={g.id} className="goal-edit">
           <div className="goal-edit-top">
+            <i className="goal-dot" style={{ background: colorOf(g.color).me[1] }} />
             <input
               value={g.title}
               onChange={(e) => set(i, { title: e.target.value })}
@@ -30,7 +32,7 @@ export default function GoalsEditor({ goals, onChange, disabled }) {
         </div>
       ))}
       {!disabled && goals.length < MAX_GOALS && (
-        <button type="button" className="link-mono add-goal" onClick={() => onChange([...goals, { id: newGoalId(), title: '', target: 3 }])}>
+        <button type="button" className="link-mono add-goal" onClick={() => onChange([...goals, { id: newGoalId(), title: '', target: 3, color: nextColor(goals) }])}>
           + add another goal
         </button>
       )}
