@@ -18,6 +18,14 @@ service cloud.firestore {
         && request.resource.data.target is int
         && request.resource.data.target >= 1 && request.resource.data.target <= 7;
 
+      // 방 설정: 방장만 방 이름 변경 가능
+      allow update: if signedIn()
+        && resource.data.ownerId == me()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 30;
+
       // 닉네임 변경: 멤버는 members 안의 내 정보만 수정 가능
       allow update: if signedIn()
         && me() in resource.data.memberIds

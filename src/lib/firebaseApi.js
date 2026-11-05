@@ -76,6 +76,10 @@ export function createFirebaseApi(config) {
       )
     },
 
+    async updateRoom(roomId, fields) {
+      await updateDoc(doc(db, 'rooms', roomId), fields)
+    },
+
     async createRoom(user, { name, goal, target }) {
       for (let tries = 0; tries < 5; tries++) {
         const id = makeRoomCode()

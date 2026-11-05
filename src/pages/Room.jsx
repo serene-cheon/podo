@@ -24,6 +24,7 @@ export default function Room({ api, user, id }) {
   const [viewing, setViewing] = useState(null)
   const [party, setParty] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const bunchRef = useRef(null)
 
@@ -141,7 +142,10 @@ export default function Room({ api, user, id }) {
       <header className="topbar">
         <a className="icon-btn" href="#/" aria-label="Back">←</a>
         <h1 className="title">{room.name}</h1>
-        <button className="link-mono" onClick={() => setInviteOpen(true)}>invite +</button>
+        <div className="top-actions">
+          <button className="icon-btn settings-btn" onClick={() => setSettingsOpen(true)} aria-label="Room settings"><DoodleIcon name="settings" size={26} /></button>
+          <button className="link-mono" onClick={() => setInviteOpen(true)}>invite +</button>
+        </div>
       </header>
 
       <p className="goal-line"><span className="mono muted">goal</span> {room.goal} <span className="mono muted">· {target}×/week</span></p>
@@ -223,6 +227,10 @@ export default function Room({ api, user, id }) {
       )}
 
 
+      {settingsOpen && (
+        <SettingsSheet api={api} room={room} isOwner={room.ownerId === user.uid} ownerName={room.members[room.ownerId]?.name} onClose={() => setSettingsOpen(false)} />
+      )}
+
       {inviteOpen && (
         <Sheet title="Invite friends" onClose={() => setInviteOpen(false)}>
           <div className="invite">
@@ -262,5 +270,41 @@ export default function Room({ api, user, id }) {
 
       {party && <Confetti />}
     </main>
+  )
+}
+
+// 방 설정: 방장은 방 이름 변경, 다른 멤버는 보기만
+function SettingsSheet({ api, room, isOwner, ownerName, onClose }) {
+  const [name, setName] = useState(room.name)
+  const [busy, setBusy] = useState(false)
+  const trimmed = name.trim()
+  async function save(e) {
+    e.preventDefault()
+    if (!trimmed || trimmed === room.name) return onClose()
+    setBusy(true)
+    try {
+      await api.updateRoom(room.id, { name: trimmed })
+      toast('Room updated')
+      onClose()
+    } catch (err) {
+      toast('Could not save: ' + (err.message || err))
+      setBusy(false)
+    }
+  }
+  return (
+    <Sheet title="Room settings" onClose={onClose}>
+      <form className="form" onSubmit={save}>
+        <label>room name
+          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} required disabled={!isOwner} />
+        </label>
+        <div className="account-row">
+          <span className="mono muted">host</span>
+          <span className="mono">{isOwner ? 'you' : ownerName || '—'}</span>
+        </div>
+        {isOwner
+          ? <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'saving…' : 'save'}</button>
+          : <p className="mono muted center">only the host can change room settings</p>}
+      </form>
+    </Sheet>
   )
 }

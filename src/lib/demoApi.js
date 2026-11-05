@@ -72,6 +72,11 @@ export default {
 
   watchRoom: (id, cb) => sub(() => cb(db.rooms[id] || null)),
 
+  async updateRoom(roomId, fields) {
+    db.rooms[roomId] = { ...db.rooms[roomId], ...fields }
+    save()
+  },
+
   async createRoom(user, { name, goal, target }) {
     const id = makeRoomCode()
     const room = {

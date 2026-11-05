@@ -57,6 +57,7 @@ export function DoodleIcon({ name, size = 30 }) {
   const paths = {
     photo: 'M6 11 h5 l2 -3 h6 l2 3 h5 v14 h-20 z M16 22 a4 4 0 1 0 0.1 0',
     video: 'M5 9 h15 v14 h-15 z M20 14 l7 -4 v12 l-7 -4',
+    settings: 'M6 10 h20 M6 16 h20 M6 22 h20 M12 10 a2.5 2.5 0 1 0 0.1 0 M21 16 a2.5 2.5 0 1 0 0.1 0 M10 22 a2.5 2.5 0 1 0 0.1 0',
     grape: 'M16 5 v4 M16 7 q4 -4 8 -1 M11 14 a3.5 3.5 0 1 0 0.1 0 M21 14 a3.5 3.5 0 1 0 0.1 0 M16 21 a3.5 3.5 0 1 0 0.1 0',
   }
   return (

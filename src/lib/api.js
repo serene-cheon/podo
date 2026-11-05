@@ -32,6 +32,7 @@ export function loadApi() {
   watchRoom(roomId, cb) -> unsubscribe            cb(null) 이면 방이 없음
   createRoom(user, {name, goal, target}) -> roomId
   joinRoom(user, roomId)
+  updateRoom(roomId, { name })                     방장만: 방 설정 변경
   watchCheckins(roomId, week, cb) -> unsubscribe
   addCheckin(user, roomId, {week, blob, mediaType, note})
   deleteCheckin(roomId, checkin)
