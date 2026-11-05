@@ -1,10 +1,10 @@
 /* podoit — clean, doodle, grape purple */
 :root {
-  --bg: #ECEAE4;          /* 종이 같은 밝은 회베이지 */
-  --card: #F7F6F2;
+  --bg: #FFFFFF;
+  --card: #F5F3F8;
   --ink: #17151C;
   --muted: #7C7884;
-  --line: #D8D4CC;
+  --line: #DEDAE4;
   --grape: #5A3A9E;       /* 메인 포도 보라 (손그림 선, 강조) */
   --grape-2: #7F5FCF;
   --grape-soft: #E6DDF5;
