@@ -22,6 +22,7 @@ export default function Room({ api, user, id }) {
   const [busy, setBusy] = useState(false)
   const [viewing, setViewing] = useState(null)
   const [party, setParty] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
 
   useEffect(() => api.watchRoom(id, setRoom), [api, id])
   useEffect(() => api.watchCheckins(id, week, (list) => setData({ week, list })), [api, id, week])
@@ -83,13 +84,16 @@ export default function Room({ api, user, id }) {
     try { await api.deleteCheckin(id, c) } catch (e) { toast('Failed: ' + (e.message || e)) }
   }
 
-  async function invite() {
-    const url = `${location.origin}${location.pathname}#/join/${id}`
+  const inviteUrl = `${location.origin}${location.pathname}#/join/${id}`
+
+  async function copy(text, msg) {
+    try { await navigator.clipboard.writeText(text); toast(msg) } catch { toast("Couldn't copy") }
+  }
+
+  async function share() {
     const text = `[podoit] Join "${room.name}" and let's ${room.goal} together! Code: ${id}`
-    try {
-      if (navigator.share) await navigator.share({ title: 'podoit invite', text, url })
-      else { await navigator.clipboard.writeText(`${text}\n${url}`); toast('Invite link copied') }
-    } catch { /* 공유 취소 */ }
+    if (!navigator.share) return copy(`${text}\n${inviteUrl}`, 'Invite copied')
+    try { await navigator.share({ title: 'podoit invite', text, url: inviteUrl }) } catch { /* 공유 취소 */ }
   }
 
   if (room === undefined) return <main className="page center-page"><p className="muted">Loading…</p></main>
@@ -111,7 +115,7 @@ export default function Room({ api, user, id }) {
       <header className="topbar">
         <a className="icon-btn" href="#/" aria-label="Back">←</a>
         <h1 className="title">{room.name}</h1>
-        <button className="link-mono" onClick={invite}>invite +</button>
+        <button className="link-mono" onClick={() => setInviteOpen(true)}>invite +</button>
       </header>
 
       <p className="goal-line"><span className="mono muted">goal</span> {room.goal} <span className="mono muted">· {target}×/week</span></p>
@@ -187,7 +191,20 @@ export default function Room({ api, user, id }) {
         </section>
       )}
 
-      <p className="room-code muted small">room code <b>{id}</b></p>
+
+      {inviteOpen && (
+        <Sheet title="Invite friends" onClose={() => setInviteOpen(false)}>
+          <div className="invite">
+            <p className="mono muted">room code</p>
+            <button className="invite-code" onClick={() => copy(id, 'Code copied')} aria-label="Copy room code">
+              {id}
+            </button>
+            <p className="mono muted">tap the code to copy</p>
+            <button className="btn primary block" onClick={share}>share invite</button>
+            <button className="btn ghost block" onClick={() => copy(inviteUrl, 'Link copied')}>copy link</button>
+          </div>
+        </Sheet>
+      )}
 
       {addOpen && (
         <Sheet title="Add a grape" onClose={() => setAddOpen(false)}>
