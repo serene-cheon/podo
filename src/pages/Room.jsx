@@ -84,9 +84,9 @@ export default function Room({ api, user, id }) {
 
   async function invite() {
     const url = `${location.origin}${location.pathname}#/join/${id}`
-    const text = `[포도알] "${room.name}" 방에서 같이 ${room.goal} 해요! 코드: ${id}`
+    const text = `[podoit] "${room.name}" 방에서 같이 ${room.goal} 해요! 코드: ${id}`
     try {
-      if (navigator.share) await navigator.share({ title: '포도알 초대', text, url })
+      if (navigator.share) await navigator.share({ title: 'podoit 초대', text, url })
       else { await navigator.clipboard.writeText(`${text}\n${url}`); toast('초대 링크를 복사했어요') }
     } catch { /* 공유 취소 */ }
   }

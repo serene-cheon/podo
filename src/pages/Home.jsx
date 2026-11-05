@@ -13,7 +13,7 @@ export default function Home({ api, user }) {
   return (
     <main className="page">
       <header className="topbar">
-        <h1 className="brand"><img src="/icon.svg" alt="" width="28" height="28" /> 포도알</h1>
+        <h1 className="brand"><img src="/icon.svg" alt="" width="28" height="28" /> podoit</h1>
         <button className="icon-btn" onClick={() => confirm('로그아웃할까요?') && api.signOut()} aria-label="로그아웃">
           <Avatar name={user.name} photo={user.photo} size={32} />
         </button>
