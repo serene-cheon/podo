@@ -8,6 +8,7 @@ import { isDemo, BUILD } from '../lib/api.js'
 import { weekKey, weekLabel, daysLeft, weekStart } from '../lib/week.js'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import GoalsEditor from '../components/GoalsEditor.jsx'
+import GrapeLoader from '../components/GrapeLoader.jsx'
 import { useTheme, setTheme } from '../lib/theme.js'
 import { goalsOf, goalIdOf, cleanGoals, newGoalId } from '../lib/goals.js'
 
@@ -29,7 +30,7 @@ export default function Home({ api, user }) {
       {rooms?.length > 0 && <MyBunch api={api} user={user} rooms={rooms} />}
 
       <section className="room-list">
-        {rooms === null && <p className="muted center">Loading…</p>}
+        {rooms === null && <div className="center" style={{ padding: '60px 0' }}><GrapeLoader /></div>}
         {rooms?.length === 0 && (
           <div className="empty">
             <SproutDoodle size={96} />

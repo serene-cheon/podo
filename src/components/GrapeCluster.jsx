@@ -52,7 +52,7 @@ const INK = '#5A3A9E' // 줄기·빈 알 손그림 선
  * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 진하게 + "me", 친구 알은 연하게 + 이름 첫 글자
  * tint: 'other' 면 전부 연한 색 (친구 개별 송이)
  */
-export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin }) {
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin, apiRef }) {
   const gid = useId().replace(/:/g, '')
   const modern = useTheme() === 'modern'
   const { pts, width, height } = layout(target, modern)
@@ -100,19 +100,78 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     }, wait)
   }
 
-  // 새로 채워진 알만 '뿅' 애니메이션
+  // ── 등장/퇴장 애니메이션 ──────────────────────────────
+  // 처음 나타날 때(burst): + 칸에서 포도알들이 사슬처럼 줄줄이 튀어나와 제자리에 안착
+  // 골 넘길 때(collapse): 포도알들이 + 칸으로 하나씩 쏙쏙 빨려 들어감
+  // 그 뒤로 새로 붙는 알: 제자리에서 '뿅'
+  const flyRefs = useRef([])
+  const emptyRefs = useRef([])
+  const mountedAt = useRef(performance.now())
+  const origin = () => (filled < target ? pts[filled] : { x: cx, y: TOP - 8 })
+
+  const burst = (from, to) => {
+    const o = origin()
+    const idx = []
+    for (let i = from; i < to; i++) idx.push(i)
+    idx.sort((a, b) => Math.hypot(pts[a].x - o.x, pts[a].y - o.y) - Math.hypot(pts[b].x - o.x, pts[b].y - o.y))
+    idx.forEach((i, n) => {
+      const el = flyRefs.current[i]
+      if (!el?.animate) return
+      const dx = o.x - pts[i].x
+      const dy = o.y - pts[i].y
+      const len = Math.hypot(dx, dy) || 1
+      const side = n % 2 ? 1 : -1 // 좌우로 번갈아 휘는 곡선
+      const px = (-dy / len) * 16 * side
+      const py = (dx / len) * 16 * side
+      el.animate([
+        { transform: `translate(${dx}px, ${dy}px) scale(.12)`, opacity: 0 },
+        { transform: `translate(${dx * 0.45 + px}px, ${dy * 0.45 + py}px) scale(.7)`, opacity: 1, offset: 0.45 },
+        { transform: 'translate(0px, 0px) scale(1.1)', offset: 0.8 },
+        { transform: 'none' },
+      ], { duration: 560, delay: 80 + n * 60, easing: 'cubic-bezier(.33,.72,.3,1)', fill: 'backwards' })
+    })
+    emptyRefs.current.forEach((el, i) => el && i !== to && el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200 + idx.length * 40, fill: 'backwards' }))
+  }
+
+  const collapse = () => new Promise((resolve) => {
+    const o = origin()
+    const idx = []
+    for (let i = 0; i < filled; i++) idx.push(i)
+    idx.sort((a, b) => Math.hypot(pts[b].x - o.x, pts[b].y - o.y) - Math.hypot(pts[a].x - o.x, pts[a].y - o.y))
+    let end = 220
+    idx.forEach((i, n) => {
+      const el = flyRefs.current[i]
+      if (!el?.animate) return
+      const delay = n * 45
+      end = Math.max(end, delay + 300)
+      el.animate([
+        { transform: 'none', opacity: 1 },
+        { transform: 'scale(1.08)', offset: 0.2 },
+        { transform: `translate(${o.x - pts[i].x}px, ${o.y - pts[i].y}px) scale(.1)`, opacity: 0 },
+      ], { duration: 300, delay, easing: 'cubic-bezier(.55,0,.75,.45)', fill: 'forwards' })
+    })
+    emptyRefs.current.forEach((el, i) => el && i !== filled && el.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }))
+    setTimeout(resolve, end)
+  })
+
+  useEffect(() => { if (apiRef) apiRef.current = { collapse } })
+
   const prev = useRef(0)
   const [pops, setPops] = useState({})
   useEffect(() => {
     if (filled > prev.current) {
+      const from = prev.current
+      prev.current = filled
+      // 화면에 처음 나타난 직후(데이터 도착 포함)면 버스트, 아니면 새 알 '뿅'
+      if (performance.now() - mountedAt.current < 1500) { burst(from, filled); return }
       const p = {}
-      for (let i = prev.current; i < filled; i++) p[i] = (i - prev.current) * 70
+      for (let i = from; i < filled; i++) p[i] = (i - from) * 70
       setPops(p)
       const t = setTimeout(() => setPops({}), 900 + filled * 70)
-      prev.current = filled
       return () => clearTimeout(t)
     }
     prev.current = filled
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filled])
 
   // 채워진 포도알 그림 (누를 때 위에 올리는 복사본에도 사용)
@@ -132,6 +191,9 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
               <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
             </>
           )}
+          {/* 유리 버블처럼 반짝이는 하이라이트와 테두리 */}
+          <circle r={p.r} fill={`url(#gl${gid})`} />
+          <circle r={p.r - 0.7} fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="1.2" />
           {/* 내 알은 얇은 링으로 구분 */}
           {team && !other && <circle r={p.r + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
           {!photo && team && (
@@ -183,6 +245,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       <defs>
         {GOAL_COLORS.map((col, k) => <Fragment key={k}>{wash(`m${k}${gid}`, col.me)}{wash(`o${k}${gid}`, col.friend)}</Fragment>)}
         {wash(`l${gid}`, ['#9FE0BE', '#3FA273'])}
+        <radialGradient id={`gl${gid}`} cx="32%" cy="26%" r="72%">
+          <stop offset="0" stopColor="#fff" stopOpacity=".6" />
+          <stop offset=".35" stopColor="#fff" stopOpacity=".08" />
+          <stop offset=".85" stopColor="#000" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity=".14" />
+        </radialGradient>
         {/* 번진 가장자리 */}
         <filter id={`w${gid}`} x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="3" />
@@ -244,9 +312,9 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             aria-label={isNext ? 'Add a grape' : undefined}
           >
             {isFilled ? (
-              <g className="press-wrap">{drawFilled(i, p, c, false)}</g>
+              <g ref={(el) => { flyRefs.current[i] = el }}><g className="press-wrap">{drawFilled(i, p, c, false)}</g></g>
             ) : (
-              modern ? (
+              <g ref={(el) => { emptyRefs.current[i] = el }}>{modern ? (
                 <g>
                   <circle r={p.r - 1} fill={isNext ? '#fff' : 'none'} stroke={isNext ? '#17151C' : '#E3E0E8'} strokeWidth={isNext ? 1.5 : 1.2} />
                   {isNext && <path d="M-5.5 0 H5.5 M0 -5.5 V5.5" stroke="#17151C" strokeWidth="1.6" strokeLinecap="round" />}
@@ -263,7 +331,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                 />
                 {isNext && <path d="M-6 0 H6 M0 -6 V6" stroke={colorOf(color).ink} strokeWidth="2" strokeLinecap="round" />}
               </g>
-              )
+              )}</g>
             )}
           </g>
         )

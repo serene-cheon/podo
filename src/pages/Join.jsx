@@ -3,6 +3,7 @@ import { toast } from '../components/Toast.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import { goalsOf } from '../lib/goals.js'
+import GrapeLoader from '../components/GrapeLoader.jsx'
 
 const MAX_MEMBERS = 20
 
@@ -21,7 +22,7 @@ export default function Join({ api, user, id }) {
 
   return (
     <main className="page center-page">
-      {room === undefined && <p className="muted">Loading…</p>}
+      {room === undefined && <GrapeLoader label="loading" />}
       {room === null && (
         <>
           <SproutDoodle size={80} />

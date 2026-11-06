@@ -369,3 +369,11 @@ button.member:active { background: var(--grape-soft); }
 [data-theme="modern"] .sheet { background: #fff; }
 [data-theme="modern"] .login-title { font-weight: 500; letter-spacing: -.045em; }
 [data-theme="modern"] .login-title span { color: #A9A6B0; }
+/* 로딩: 포도알 자리 바꾸기 */
+.gloader { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.gloader-box { position: relative; }
+.gloader-box { animation: gtumble 2.2s cubic-bezier(.65,0,.3,1) infinite alternate; }
+.gloader-box span { position: absolute; border-radius: 50%; animation: gbreathe 1.1s ease-in-out infinite alternate; }
+@keyframes gtumble { 0%, 18% { transform: rotate(0deg); } 82%, 100% { transform: rotate(180deg); } }
+@keyframes gbreathe { from { transform: scale(1); } to { transform: scale(.86); } }
+[data-theme="modern"] .gloader-box span { box-shadow: inset -3px -4px 8px rgba(0,0,0,.12), inset 3px 3px 6px rgba(255,255,255,.45); }

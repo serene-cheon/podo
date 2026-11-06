@@ -4,6 +4,7 @@ import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
 import Camera from '../components/Camera.jsx'
 import Bloom from '../components/Bloom.jsx'
+import GrapeLoader from '../components/GrapeLoader.jsx'
 import Confetti from '../components/Confetti.jsx'
 import { toast } from '../components/Toast.jsx'
 import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
@@ -47,11 +48,16 @@ export default function Room({ api, user, id }) {
   const goal = goals.find((g) => g.id === goalPick) || goals[0]
   const goalIdx = goals.indexOf(goal)
   const gc = colorOf(goal.color)
-  const [slide, setSlide] = useState('') // 스와이프 방향 애니메이션
-  function goTo(i, dir) {
-    if (i < 0 || i >= goals.length || i === goalIdx) return
-    setSlide(dir || (i > goalIdx ? 'left' : 'right'))
-    setGoalPick(goals[i].id)
+  // 골 넘기기: 지금 포도알들이 + 로 빨려 들어간 뒤 → 새 골 포도알들이 + 에서 튀어나옴
+  const bunchApi = useRef(null)
+  const switching = useRef(false)
+  async function goTo(i) {
+    if (i < 0 || i >= goals.length || i === goalIdx || switching.current) return
+    switching.current = true
+    try { await bunchApi.current?.collapse() } finally {
+      setGoalPick(goals[i].id)
+      switching.current = false
+    }
   }
   // 포도송이를 좌우로 밀면 다음/이전 골
   const swipe = useRef(null)
@@ -62,7 +68,7 @@ export default function Room({ api, user, id }) {
     if (!s0 || goals.length < 2) return
     const dx = e.clientX - s0.x
     const dy = e.clientY - s0.y
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(goalIdx + (dx < 0 ? 1 : -1), dx < 0 ? 'left' : 'right')
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(goalIdx + (dx < 0 ? 1 : -1))
   }
   const target = goal.target
   const members = useMemo(() => {
@@ -164,7 +170,7 @@ export default function Room({ api, user, id }) {
     try { await navigator.share({ title: 'podoit invite', text, url: inviteUrl }) } catch { /* 공유 취소 */ }
   }
 
-  if (room === undefined) return <main className="page center-page"><p className="muted">Loading…</p></main>
+  if (room === undefined) return <main className="page center-page"><GrapeLoader label="loading" /></main>
   if (room === null) return (
     <main className="page center-page">
       <SproutDoodle size={80} /><p>Room not found</p><a className="btn ghost" href="#/">Go home</a>
@@ -219,7 +225,7 @@ export default function Room({ api, user, id }) {
           </div>
           <p className="big-count small"><b>{done}</b><span>/{total}</span></p>
         </div>
-        <div key={goal.id} className={`slide ${slide ? `slide-${slide}` : ''}`}>
+        <div key={goal.id}>
         <GrapeCluster
           target={total}
           color={goal.color}
@@ -227,6 +233,7 @@ export default function Room({ api, user, id }) {
           size={1.4}
           maxWidth={300}
           key={goal.id}
+          apiRef={bunchApi}
           meUid={user.uid}
           labelOf={(uid) => room.members[uid]?.name}
           canAdd={isCurrent && !busy && mine.length < target}
