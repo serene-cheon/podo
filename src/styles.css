@@ -377,3 +377,21 @@ button.member:active { background: var(--grape-soft); }
 @keyframes gtumble { 0%, 18% { transform: rotate(0deg); } 82%, 100% { transform: rotate(180deg); } }
 @keyframes gbreathe { from { transform: scale(1); } to { transform: scale(.86); } }
 [data-theme="modern"] .gloader-box span { box-shadow: inset -3px -4px 8px rgba(0,0,0,.12), inset 3px 3px 6px rgba(255,255,255,.45); }
+
+/* ── 발사 버튼 + 옵션 + 날아가는 포도알 ── */
+.room { padding-bottom: calc(env(safe-area-inset-bottom) + 120px); }
+.launch-back { position: fixed; inset: 0; z-index: 25; background: rgba(23,21,28,.18); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); animation: fade .2s; }
+.launcher { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom) + 26px); width: 0; height: 0; z-index: 26; }
+.launch-btn { position: absolute; left: -33px; top: -33px; width: 66px; height: 66px; border-radius: 50%; border: 0; padding: 0; background: none; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+.launch-grape { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 34% 30%, #ffffff88, transparent 34%), radial-gradient(circle at 42% 40%, var(--lc0), var(--lc)); box-shadow: 0 10px 24px rgba(60,30,110,.28); }
+.launch-plus { position: absolute; left: 22px; top: 22px; transition: transform .3s cubic-bezier(.3,1.6,.5,1); }
+.launcher.open .launch-btn { transform: scale(.88); }
+.launcher.open .launch-plus { transform: rotate(45deg); }
+.launch-opt { position: absolute; left: -31px; top: -31px; width: 62px; border: 0; background: none; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; opacity: 0; transform: translate(0, 0) scale(.3); pointer-events: none; transition: transform .32s cubic-bezier(.3,1.5,.5,1), opacity .2s; }
+.launcher.open .launch-opt { opacity: 1; transform: translate(var(--x), var(--y)) scale(1); pointer-events: auto; }
+.launch-ic { width: 58px; height: 58px; border-radius: 50%; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(40,20,70,.16); transition: transform .18s cubic-bezier(.3,1.6,.5,1), background .15s, color .15s; }
+.launch-opt small { font-size: 12px; color: var(--ink); background: rgba(255,255,255,.92); padding: 2px 8px; border-radius: 999px; white-space: nowrap; box-shadow: 0 2px 8px rgba(40,20,70,.1); }
+.launch-opt.hover .launch-ic { transform: scale(1.22); background: var(--lc); color: #fff; }
+.flyer { position: fixed; z-index: 27; border-radius: 50%; pointer-events: none; box-shadow: 0 6px 16px rgba(60,30,110,.25); }
+.flyer.waiting { animation: flywait .7s ease-in-out infinite alternate; }
+@keyframes flywait { from { transform: scale(1); } to { transform: scale(.9); } }

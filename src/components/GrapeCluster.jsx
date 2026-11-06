@@ -154,7 +154,9 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     setTimeout(resolve, end)
   })
 
-  useEffect(() => { if (apiRef) apiRef.current = { collapse } })
+  // 다음 빈 칸의 화면 위치 (발사된 포도알이 날아갈 곳)
+  const nextRect = () => (filled < target ? emptyRefs.current[filled]?.getBoundingClientRect() : null)
+  useEffect(() => { if (apiRef) apiRef.current = { collapse, nextRect } })
 
   const prev = useRef(0)
   const [pops, setPops] = useState({})

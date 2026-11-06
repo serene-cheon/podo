@@ -5,6 +5,7 @@ import Sheet from '../components/Sheet.jsx'
 import Camera from '../components/Camera.jsx'
 import Bloom from '../components/Bloom.jsx'
 import GrapeLoader from '../components/GrapeLoader.jsx'
+import Launcher, { Flyer } from '../components/Launcher.jsx'
 import Confetti from '../components/Confetti.jsx'
 import { toast } from '../components/Toast.jsx'
 import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
@@ -37,6 +38,10 @@ export default function Room({ api, user, id }) {
   const bunchRef = useRef(null)
   const [goalPick, setGoalPick] = useState(null)
   const [personUid, setPersonUid] = useState(null) // 개별 포도송이 보기
+  // 발사 버튼 → 옵션 고르기 → 포도알이 날아가 빈 칸에 박힘
+  const launchRef = useRef(null)
+  const [flyer, setFlyer] = useState(null) // { from, to, color, payload, waiting }
+  const [noteOpen, setNoteOpen] = useState(false)
 
   useEffect(() => api.watchRoom(id, setRoom), [api, id])
   useEffect(() => api.watchCheckins(id, week, (list) => setData({ week, list })), [api, id, week])
@@ -111,12 +116,12 @@ export default function Room({ api, user, id }) {
     seen.current = { key, done }
   }, [data.week, week, done, total, goal.id])
 
-  async function add({ blob = null, mediaType = null } = {}) {
+  async function add({ blob = null, mediaType = null, note: n } = {}) {
     setCamera(null)
     setAddOpen(false)
     setBusy(true)
     try {
-      await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, blob, mediaType, note: note.trim() })
+      await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, blob, mediaType, note: (n ?? note).trim() })
       vibrate(20)
       setNote('')
       if (mine.length + 1 === target) toast(`You finished “${goal.title}” this week 🍇`)
@@ -125,6 +130,29 @@ export default function Room({ api, user, id }) {
     } finally {
       setBusy(false)
     }
+  }
+
+  // 옵션 고르기: 사진/영상은 카메라 → 붙이기 누르면 발사, 메모는 한 줄 쓰고 발사, 그냥은 바로 발사
+  function choose(opt) {
+    if (opt === 'photo' || opt === 'video') setCamera(opt)
+    else if (opt === 'note') setNoteOpen(true)
+    else shoot({})
+  }
+  function shoot(payload) {
+    setCamera(null)
+    setNoteOpen(false)
+    const from = launchRef.current?.getBoundingClientRect()
+    const to = bunchApi.current?.nextRect?.()
+    if (!from || !to) return add(payload)
+    navigator.vibrate?.(10)
+    setFlyer({ key: Date.now(), from, to, color: gc, payload, waiting: false })
+  }
+  async function landed() {
+    // 박힌 자리에서 (업로드가 끝날 때까지) 살짝 두근두근 → 진짜 포도알로 바뀜
+    setFlyer((f) => f && { ...f, waiting: true })
+    const payload = flyer?.payload || {}
+    await add(payload)
+    setFlyer(null)
   }
 
   async function remove(c) {
@@ -351,7 +379,14 @@ export default function Room({ api, user, id }) {
         </Sheet>
       )}
 
-      {camera && <Camera initialMode={camera} onClose={() => setCamera(null)} onDone={add} />}
+      {camera && <Camera initialMode={camera} onClose={() => setCamera(null)} onDone={shoot} />}
+
+      {noteOpen && <NoteSheet color={gc} onClose={() => setNoteOpen(false)} onShoot={(n) => shoot({ note: n })} />}
+
+      {isCurrent && mine.length < target && !bloom && !camera && !noteOpen && !addOpen && !settingsOpen && !personUid && (
+        <Launcher color={gc} buttonRef={launchRef} onChoose={choose} />
+      )}
+      {flyer && <Flyer key={flyer.key} from={flyer.from} to={flyer.to} color={flyer.color} waiting={flyer.waiting} onLanded={landed} />}
 
       {bloom && (
         <Bloom
@@ -434,5 +469,18 @@ function GearIcon({ size = 20 }) {
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
+  )
+}
+
+// 메모 쓰고 발사
+function NoteSheet({ color, onClose, onShoot }) {
+  const [text, setText] = useState('')
+  return (
+    <Sheet title="Add a note" onClose={onClose}>
+      <form className="form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) onShoot(text.trim()) }}>
+        <input className="note-input" value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you do?" maxLength={60} autoFocus />
+        <button className="btn primary block" disabled={!text.trim()} style={{ background: color.me[1], borderColor: color.me[1] }}>shoot the grape ↑</button>
+      </form>
+    </Sheet>
   )
 }
