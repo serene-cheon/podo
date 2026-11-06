@@ -192,7 +192,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           ? (e) => { if (e.detail === 0) { const { color: col, isMine } = infoOf(c); onPressStart(c, e.currentTarget.getBoundingClientRect(), col, isMine); onPressEnd?.(true) } }
           : isNext ? onAdd : undefined
         const press = pressable ? {
-          onPointerDown: (e) => { e.currentTarget.setPointerCapture?.(e.pointerId); startPress(i, c, e) },
+          onPointerDown: (e) => { try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* Safari 등 */ } startPress(i, c, e) },
           onPointerMove: movePress,
           onPointerCancel: cancelPress,
           onPointerUp: () => endPress(i),

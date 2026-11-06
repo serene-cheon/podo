@@ -37,3 +37,6 @@ export function loadApi() {
   addCheckin(user, roomId, {week, goalId, blob, mediaType, note})
   deleteCheckin(roomId, checkin)
 */
+
+// 배포 확인용: 이 버전이 빌드된 시각 (UTC)
+export const BUILD = typeof __BUILD__ !== 'undefined' ? __BUILD__.slice(0, 16).replace('T', ' ') : 'dev'

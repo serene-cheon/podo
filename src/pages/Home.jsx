@@ -4,7 +4,7 @@ import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
 import { toast } from '../components/Toast.jsx'
 import { normalizeCode } from '../lib/code.js'
-import { isDemo } from '../lib/api.js'
+import { isDemo, BUILD } from '../lib/api.js'
 import { weekKey, weekLabel, daysLeft, weekStart } from '../lib/week.js'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import GoalsEditor from '../components/GoalsEditor.jsx'
@@ -168,6 +168,7 @@ function ProfileSheet({ api, user, onClose }) {
         </div>
         <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'saving…' : 'save'}</button>
         <button type="button" className="btn danger block" onClick={() => confirm('Sign out?') && api.signOut()}>sign out</button>
+        <p className="mono muted center build-tag">build {BUILD} UTC</p>
       </form>
     </Sheet>
   )
