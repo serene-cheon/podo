@@ -58,6 +58,20 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   const team = meUid !== undefined
   const cx = width / 2
 
+  // 꾹 누르면 부풀고, 떼면 열림. 누른 채 움직이면(스와이프) 취소
+  const [pressed, setPressed] = useState(null)
+  const pressRef = useRef(null)
+  const startPress = (i, e) => {
+    pressRef.current = { i, x: e.clientX, y: e.clientY }
+    setPressed(i)
+    navigator.vibrate?.(8)
+  }
+  const movePress = (e) => {
+    const s0 = pressRef.current
+    if (s0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 12) { pressRef.current = null; setPressed(null) }
+  }
+  const cancelPress = () => { pressRef.current = null; setPressed(null) }
+
   // 새로 채워진 알만 '뿅' 애니메이션
   const prev = useRef(0)
   const [pops, setPops] = useState({})
@@ -73,6 +87,30 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     prev.current = filled
   }, [filled])
 
+  // 채워진 포도알 그림 (누를 때 위에 올리는 복사본에도 사용)
+  const drawFilled = (i, p, c, top) => {
+    const other = team ? c?.uid !== meUid : tint === 'other'
+    const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
+    const col = colorOf(ci)
+    return (
+      <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
+        <g transform={`rotate(${p.rot})`}>
+          {top && <ellipse rx={p.r} ry={p.r * 0.96} fill="#F5F3F8" filter={`url(#w${gid})`} />}
+          <ellipse rx={p.r} ry={p.r * 0.96} fill={`url(#${other ? 'o' : 'm'}${ci}${gid})`} filter={`url(#w${gid})`} />
+          <ellipse cx={-p.r * 0.35} cy={-p.r * 0.38} rx={p.r * 0.28} ry={p.r * 0.17} fill="#fff" opacity=".55" filter={`url(#w${gid})`} />
+        </g>
+        {team && (
+          <text y="4.5" textAnchor="middle" className="grape-label" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="14" fontWeight="500" fill={other ? col.label : '#fff'}>
+            {other ? [...(labelOf?.(c.uid) || '?')][0].toLowerCase() : 'me'}
+          </text>
+        )}
+        {c?.mediaType && (
+          <circle cx={p.r * 0.68} cy={p.r * 0.68} r={4.2} fill="#fff" stroke={INK} strokeWidth="1.4" filter={`url(#h${gid})`} />
+        )}
+      </g>
+    )
+  }
+
   const wash = (id, [inner, edge]) => (
     // 수채화: 가운데는 옅고 가장자리에 물감이 고이는 느낌
     <radialGradient id={id} cx="40%" cy="38%" r="70%">
@@ -84,7 +122,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
 
   return (
     <svg
-      className="cluster"
+      className={`cluster ${pressed !== null ? 'has-press' : ''}`}
       viewBox={`-6 0 ${width + 12} ${height}`}
       width={(width + 12) * size}
       height={height * size}
@@ -118,39 +156,37 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       />
       <path filter={`url(#h${gid})`} d={`M${cx + 4} 21 C${cx + 16} 17 ${cx + 26} 15 ${cx + 38} 14`} stroke={INK} strokeWidth="1.2" fill="none" opacity=".55" />
 
-      {pts.map((p, i) => {
+      {pts.map((_, i) => i).map((i) => {
+        const p = pts[i]
         const c = checkins[i]
         const isFilled = i < filled
         const isNext = !isFilled && i === filled && canAdd
-        const handle = isFilled ? (e) => onOpen?.(c, e.currentTarget.getBoundingClientRect()) : isNext ? onAdd : undefined
-        const other = team ? c?.uid !== meUid : tint === 'other'
-        const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
-        const col = colorOf(ci)
+        const handle = isFilled ? (e) => e.detail === 0 && onOpen?.(c, e.currentTarget.getBoundingClientRect()) : isNext ? onAdd : undefined
+        const press = isFilled && onOpen ? {
+          onPointerDown: (e) => { e.currentTarget.setPointerCapture?.(e.pointerId); startPress(i, e) },
+          onPointerMove: movePress,
+          onPointerCancel: cancelPress,
+          onPointerUp: (e) => {
+            if (pressRef.current?.i !== i) return
+            const rect = e.currentTarget.getBoundingClientRect() // 부푼 상태 그대로에서 열림
+            pressRef.current = null
+            navigator.vibrate?.(14)
+            onOpen(c, rect, colorOf((colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length), !(team ? c?.uid !== meUid : tint === 'other'))
+            setTimeout(() => setPressed(null), 60)
+          },
+        } : {}
         return (
           <g
             key={i}
             transform={`translate(${p.x} ${p.y})`}
             onClick={handle}
-            className={`grape ${isFilled ? 'on' : 'off'} ${isNext ? 'next' : ''} ${handle ? 'tap' : ''}`}
+            {...press}
+            className={`grape ${isFilled ? 'on' : 'off'} ${isNext ? 'next' : ''} ${handle ? 'tap' : ''} ${pressed === i ? 'press-src' : ''}`}
             role={handle ? 'button' : undefined}
             aria-label={isNext ? 'Add a grape' : undefined}
           >
             {isFilled ? (
-              <g className={i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
-                <g transform={`rotate(${p.rot})`}>
-                  <ellipse rx={p.r} ry={p.r * 0.96} fill={`url(#${other ? 'o' : 'm'}${ci}${gid})`} filter={`url(#w${gid})`} />
-                  {/* 물감 얼룩 하이라이트 */}
-                  <ellipse cx={-p.r * 0.35} cy={-p.r * 0.38} rx={p.r * 0.28} ry={p.r * 0.17} fill="#fff" opacity=".55" filter={`url(#w${gid})`} />
-                </g>
-                {team && (
-                  <text y="4.5" textAnchor="middle" className="grape-label" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="14" fontWeight="500" fill={other ? col.label : '#fff'}>
-                    {other ? [...(labelOf?.(c.uid) || '?')][0].toLowerCase() : 'me'}
-                  </text>
-                )}
-                {c?.mediaType && (
-                  <circle cx={p.r * 0.68} cy={p.r * 0.68} r={4.2} fill="#fff" stroke={INK} strokeWidth="1.4" filter={`url(#h${gid})`} />
-                )}
-              </g>
+              <g className="press-wrap">{drawFilled(i, p, c, false)}</g>
             ) : (
               <g filter={`url(#h${gid})`}>
                 <circle
@@ -167,6 +203,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           </g>
         )
       })}
+      {/* 누르고 있는 알: 원래 알은 그대로 두고(터치 유지), 위에 부푼 복사본을 그림 */}
+      {pressed !== null && pressed < filled && (
+        <g transform={`translate(${pts[pressed].x} ${pts[pressed].y})`} className="grape on pressing grape-top" pointerEvents="none">
+          <g className="press-wrap">{drawFilled(pressed, pts[pressed], checkins[pressed], true)}</g>
+        </g>
+      )}
     </svg>
   )
 }

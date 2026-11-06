@@ -190,7 +190,9 @@ input { font: inherit; }
 .pv-overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 16px 14px; background: linear-gradient(transparent, rgba(0,0,0,.55)); color: #fff; display: flex; flex-direction: column; gap: 8px; }
 .pv-overlay .pv-meta small { color: rgba(255,255,255,.8); }
 .pv-note-sm { font-size: 17px; line-height: 1.35; }
-.pv-card.note { display: flex; flex-direction: column; justify-content: space-between; padding: 18px; }
+.pv-inner { position: absolute; inset: 0; }
+.pv-card.note .pv-inner { display: flex; flex-direction: column; justify-content: space-between; padding: 18px; }
+.pv-blob { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
 .pv-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 10px 6px; }
 .pv-note { font-size: 28px; line-height: 1.2; font-weight: 500; letter-spacing: -.02em; color: var(--ink); }
 .pv-note.long { font-size: 21px; }
@@ -291,3 +293,13 @@ button.member:active { background: var(--grape-soft); }
 .invite-row .invite-code { margin-top: 6px; font-size: 26px; padding: 10px 16px; letter-spacing: 6px; }
 .invite-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .invite-actions .btn { padding: 12px 10px; }
+/* 꾹 누르기: 포도알이 말랑하게 부풀어요 */
+.cluster { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.grape.on { transition: opacity .2s; touch-action: manipulation; }
+.grape .press-wrap { transition: transform .34s cubic-bezier(.3,1.8,.45,1); transform-box: fill-box; transform-origin: center; }
+.grape.pressing .press-wrap { transform: scale(1.4); animation: jelly .46s .22s ease-in-out infinite alternate; }
+.cluster.has-press .grape.on:not(.pressing):not(.press-src) { opacity: .4; }
+.grape.press-src .press-wrap { opacity: 0; }
+.grape-top .press-wrap { animation: inflate .34s cubic-bezier(.3,1.8,.45,1) forwards, jelly .46s .34s ease-in-out infinite alternate; }
+@keyframes inflate { from { transform: scale(1); } to { transform: scale(1.4); } }
+@keyframes jelly { 0% { transform: scale(1.42, 1.34); } 100% { transform: scale(1.33, 1.44); } }
