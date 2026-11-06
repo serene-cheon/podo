@@ -122,7 +122,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         const c = checkins[i]
         const isFilled = i < filled
         const isNext = !isFilled && i === filled && canAdd
-        const handle = isFilled ? () => onOpen?.(c) : isNext ? onAdd : undefined
+        const handle = isFilled ? (e) => onOpen?.(c, e.currentTarget.getBoundingClientRect()) : isNext ? onAdd : undefined
         const other = team ? c?.uid !== meUid : tint === 'other'
         const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
         const col = colorOf(ci)

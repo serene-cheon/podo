@@ -25,6 +25,8 @@ export default function Room({ api, user, id }) {
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [viewing, setViewing] = useState(null)
+  const [viewFrom, setViewFrom] = useState(null) // 펼쳐지기 시작할 포도알 위치
+  const openViewer = (c, rect) => { setViewFrom(rect || null); setViewing(c) }
   const [party, setParty] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -226,7 +228,7 @@ export default function Room({ api, user, id }) {
           labelOf={(uid) => room.members[uid]?.name}
           canAdd={isCurrent && !busy && mine.length < target}
           onAdd={() => setAddOpen(true)}
-          onOpen={setViewing}
+          onOpen={openViewer}
         />
         </div>
         {goals.length > 1 && (
@@ -274,7 +276,7 @@ export default function Room({ api, user, id }) {
           <h2 className="label-mono">this week's moments</h2>
           <div className="moments">
             {moments.map((c) => (
-              <button key={c.id} className="moment" onClick={() => setViewing(c)}>
+              <button key={c.id} className="moment" onClick={(e) => openViewer(c, e.currentTarget.getBoundingClientRect())}>
                 {c.mediaUrl ? (
                   c.mediaType === 'video'
                     ? <video src={c.mediaUrl} muted playsInline autoPlay loop />
@@ -302,7 +304,7 @@ export default function Room({ api, user, id }) {
                 const n = Math.min(list.length, g.target)
                 return (
                   <div key={g.id} className={`person-bunch ${n >= g.target ? 'done' : ''}`}>
-                    <GrapeCluster target={g.target} checkins={list} color={g.color} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onOpen={(c) => { setPersonUid(null); setViewing(c) }} />
+                    <GrapeCluster target={g.target} checkins={list} color={g.color} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onOpen={(c, rect) => { setPersonUid(null); openViewer(c, rect) }} />
                     <b>{g.title}</b>
                     <small className="mono muted">{n}/{g.target}{n >= g.target ? ' · done' : ''}</small>
                   </div>
@@ -344,6 +346,9 @@ export default function Room({ api, user, id }) {
           checkin={viewing}
           goal={goals.length > 1 ? goalTitle(viewing) : null}
           member={memberOf(viewing.uid)}
+          isMe={viewing.uid === user.uid}
+          color={colorOf(goals.find((g) => g.id === goalIdOf(viewing, goals))?.color)}
+          from={viewFrom}
           canRemove={viewing.uid === user.uid && viewing.week === thisWeek}
           onRemove={() => remove(viewing)}
           onClose={() => setViewing(null)}
