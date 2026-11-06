@@ -62,7 +62,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   const [pressed, setPressed] = useState(null)
   const pressRef = useRef(null)
   const startPress = (i, e) => {
-    pressRef.current = { i, x: e.clientX, y: e.clientY }
+    pressRef.current = { i, x: e.clientX, y: e.clientY, t: performance.now() }
     setPressed(i)
     navigator.vibrate?.(8)
   }
@@ -71,6 +71,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     if (s0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 12) { pressRef.current = null; setPressed(null) }
   }
   const cancelPress = () => { pressRef.current = null; setPressed(null) }
+  const topRef = useRef(null) // 부푼 복사본 (여기서부터 카드가 펼쳐짐)
 
   // 새로 채워진 알만 '뿅' 애니메이션
   const prev = useRef(0)
@@ -167,12 +168,20 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           onPointerMove: movePress,
           onPointerCancel: cancelPress,
           onPointerUp: (e) => {
-            if (pressRef.current?.i !== i) return
-            const rect = e.currentTarget.getBoundingClientRect() // 부푼 상태 그대로에서 열림
+            const s0 = pressRef.current
+            if (s0?.i !== i) return
             pressRef.current = null
-            navigator.vibrate?.(14)
-            onOpen(c, rect, colorOf((colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length), !(team ? c?.uid !== meUid : tint === 'other'))
-            setTimeout(() => setPressed(null), 60)
+            // 짧게 톡 탭해도 포도알이 통 부푸는 게 보이도록 조금 기다렸다가 열기
+            const wait = Math.max(0, 230 - (performance.now() - s0.t))
+            const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
+            const isMine = !(team ? c?.uid !== meUid : tint === 'other')
+            const fallback = e.currentTarget.getBoundingClientRect()
+            setTimeout(() => {
+              const rect = topRef.current?.getBoundingClientRect() || fallback
+              navigator.vibrate?.(14)
+              onOpen(c, rect, colorOf(ci), isMine)
+              setTimeout(() => setPressed(null), 60)
+            }, wait)
           },
         } : {}
         return (
@@ -205,7 +214,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       })}
       {/* 누르고 있는 알: 원래 알은 그대로 두고(터치 유지), 위에 부푼 복사본을 그림 */}
       {pressed !== null && pressed < filled && (
-        <g transform={`translate(${pts[pressed].x} ${pts[pressed].y})`} className="grape on pressing grape-top" pointerEvents="none">
+        <g transform={`translate(${pts[pressed].x} ${pts[pressed].y})`} className="grape on pressing grape-top" pointerEvents="none" ref={topRef}>
           <g className="press-wrap">{drawFilled(pressed, pts[pressed], checkins[pressed], true)}</g>
         </g>
       )}
