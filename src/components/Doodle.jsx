@@ -21,7 +21,7 @@ export function GrapeDoodle({ size = 180 }) {
       <svg width={size} height={size} viewBox="0 0 180 180" aria-hidden>
         <path d="M88 54 V22" stroke="#17151C" strokeWidth="2" strokeLinecap="round" />
         <path d="M89 34 C100 22 118 22 126 29 C116 40 100 41 89 34Z" fill="#8FCBA9" />
-        {[[62, 68], [88, 68], [114, 68], [75, 94], [101, 94], [88, 120]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="12.5" fill={fills[i]} />)}
+        {[[62, 68], [88, 68], [114, 68], [75, 94], [101, 94], [88, 120]].map(([x, y], i) => <rect key={i} x={x - 12} y={y - 12} width="24" height="24" rx="10" fill={fills[i]} />)}
       </svg>
     )
   }
@@ -54,7 +54,7 @@ export function SproutDoodle({ size = 90 }) {
   if (useTheme() === 'modern') {
     return (
       <svg width={size} height={size} viewBox="0 0 90 90" aria-hidden>
-        <circle cx="34" cy="40" r="12" fill="#E6DDF5" /><circle cx="58" cy="40" r="12" fill="#C9B5EE" /><circle cx="46" cy="62" r="12" fill="#7F5FCF" />
+        <rect x="22" y="28" width="24" height="24" rx="10" fill="#E6DDF5" /><rect x="46" y="28" width="24" height="24" rx="10" fill="#C9B5EE" /><rect x="34" y="52" width="24" height="24" rx="10" fill="#7F5FCF" />
         <path d="M46 28 V14" stroke="#17151C" strokeWidth="2" strokeLinecap="round" />
       </svg>
     )

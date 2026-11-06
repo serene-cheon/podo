@@ -6,8 +6,9 @@ const LAYOUTS = {
 }
 const R = 20
 const DX = R * 2 + 4
-const DY = R * 1.8 + 2
+const DY_ROUND = R * 1.8 + 2
 const TOP = 46
+export const SQ = 0.42 // 모던 포도알 모서리 둥글기 (반지름 대비)
 
 // 8알 이상: 5,4,3,2,1 처럼 한 줄씩 줄어드는 송이 모양
 function autoRows(n) {
@@ -26,6 +27,7 @@ const jitter = (i, k) => {
 
 function layout(target, clean) {
   const rows = LAYOUTS[target] || autoRows(Math.max(1, target))
+  const DY = clean ? DX : DY_ROUND
   const maxRow = Math.max(...rows)
   const width = maxRow * DX
   const pts = []
@@ -121,19 +123,20 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
     const col = colorOf(ci)
     if (modern) {
-      // 모던: 단색 동그라미. 사진이 있으면 동그라미 안에 사진
+      // 모던: 살짝 둥근 사각형. 사진이 있으면 그 안에 사진
       const photo = c?.mediaType === 'photo' && c.mediaUrl
+      const rx = p.r * SQ
       return (
         <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
-          <circle r={p.r} fill={other ? col.friend[1] : col.me[1]} />
+          <rect x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={rx} fill={other ? col.friend[1] : col.me[1]} />
           {photo && (
             <>
-              <clipPath id={`c${i}${gid}`}><circle r={p.r} /></clipPath>
+              <clipPath id={`c${i}${gid}`}><rect x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={rx} /></clipPath>
               <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
             </>
           )}
-          {/* 내 알은 얇은 링으로 구분 */}
-          {team && !other && <circle r={p.r + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
+          {/* 내 알은 얇은 테두리로 구분 */}
+          {team && !other && <rect x={-p.r - 2.4} y={-p.r - 2.4} width={p.r * 2 + 4.8} height={p.r * 2 + 4.8} rx={rx + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
           {!photo && team && (
             <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={other ? col.label : '#fff'}>
               {other ? [...(labelOf?.(c.uid) || '?')][0].toUpperCase() : 'ME'}
@@ -248,7 +251,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             ) : (
               modern ? (
                 <g>
-                  <circle r={p.r - 1} fill={isNext ? '#fff' : 'none'} stroke={isNext ? '#17151C' : '#E3E0E8'} strokeWidth={isNext ? 1.5 : 1.2} />
+                  <rect x={-p.r + 1} y={-p.r + 1} width={p.r * 2 - 2} height={p.r * 2 - 2} rx={(p.r - 1) * SQ} fill={isNext ? '#fff' : 'none'} stroke={isNext ? '#17151C' : '#E3E0E8'} strokeWidth={isNext ? 1.5 : 1.2} />
                   {isNext && <path d="M-5.5 0 H5.5 M0 -5.5 V5.5" stroke="#17151C" strokeWidth="1.6" strokeLinecap="round" />}
                 </g>
               ) : (

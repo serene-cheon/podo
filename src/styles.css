@@ -369,3 +369,5 @@ button.member:active { background: var(--grape-soft); }
 [data-theme="modern"] .sheet { background: #fff; }
 [data-theme="modern"] .login-title { font-weight: 500; letter-spacing: -.045em; }
 [data-theme="modern"] .login-title span { color: #A9A6B0; }
+[data-theme="modern"] .dot, [data-theme="modern"] .goal-tab i, [data-theme="modern"] .member-dots i, [data-theme="modern"] .goal-dot { border-radius: 32%; }
+[data-theme="modern"] .brand-hand::after { border-radius: 32%; }

@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Avatar from './Avatar.jsx'
 import { timeLabel } from '../lib/week.js'
+import { useTheme } from '../lib/theme.js'
+import { SQ } from './GrapeCluster.jsx'
 
 // 포도알 하나가 끊김 없이 모양만 바뀌는 인터랙션
 //   grape(동그라미, 포도알 자리) → press(그 자리에서 둥근 네모로 커짐, 안의 사진/메모가 보임)
@@ -9,13 +11,13 @@ const SPRING = 'cubic-bezier(.22,1.3,.36,1)'
 const SMOOTH = 'cubic-bezier(.2,.85,.25,1)'
 const SHRINK = 'cubic-bezier(.45,0,.55,1)'
 
-function boxes(rect, tall) {
+function boxes(rect, tall, square) {
   const vw = window.innerWidth
   const vh = window.innerHeight
   const cx = rect.left + rect.width / 2
   const cy = rect.top + rect.height / 2
   const d = Math.min(rect.width, rect.height)
-  const grape = { x: cx - d / 2, y: cy - d / 2, w: d, h: d, r: d / 2 }
+  const grape = { x: cx - d / 2, y: cy - d / 2, w: d, h: d, r: square ? (d / 2) * SQ : d / 2 }
   const s = Math.min(Math.max(d * 2, 108), 156)
   const press = {
     x: Math.min(Math.max(cx - s / 2, 10), vw - s - 10),
@@ -36,7 +38,8 @@ const css = (b) => ({ left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, heig
 export default function Bloom({ item, phase, member, goal, canRemove, onRemove, onClose, onDone }) {
   const { c, rect, color, isMine } = item
   const hasMedia = !!(c.mediaType && c.mediaUrl)
-  const B = useMemo(() => boxes(rect, hasMedia), [rect, hasMedia])
+  const square = useTheme() === 'modern'
+  const B = useMemo(() => boxes(rect, hasMedia, square), [rect, hasMedia, square])
   const target = phase === 'press' ? 'press' : phase === 'open' ? 'open' : 'grape'
   const elRef = useRef(null)
   const cur = useRef(null)
