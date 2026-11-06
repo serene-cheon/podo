@@ -3,7 +3,7 @@ import GrapeCluster from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
 import Camera from '../components/Camera.jsx'
-import Viewer from '../components/Viewer.jsx'
+import Bloom from '../components/Bloom.jsx'
 import Confetti from '../components/Confetti.jsx'
 import { toast } from '../components/Toast.jsx'
 import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
@@ -24,9 +24,12 @@ export default function Room({ api, user, id }) {
   const [camera, setCamera] = useState(null) // 'photo' | 'video'
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
-  const [viewing, setViewing] = useState(null)
-  const [viewFrom, setViewFrom] = useState(null) // 펼쳐지기 시작할 포도알 위치
-  const openViewer = (c, rect) => { setViewFrom(rect || null); setViewing(c) }
+  // 포도알 → 둥근 네모 → 펼침 (Bloom). phase: press | open | cancel | closing
+  const [bloom, setBloom] = useState(null)
+  const pressStart = (c, rect, color, isMine) => setBloom({ c, rect, color, isMine, phase: 'press' })
+  const pressEnd = (open) => setBloom((b) => b && { ...b, phase: open ? 'open' : 'cancel' })
+  const closeBloom = () => setBloom((b) => b && { ...b, phase: 'closing' })
+  const openFrom = (c, rect, colorIdx) => setBloom({ c, rect, color: colorOf(colorIdx), isMine: c.uid === user.uid, phase: 'open' })
   const [party, setParty] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -120,7 +123,7 @@ export default function Room({ api, user, id }) {
 
   async function remove(c) {
     if (!confirm('Remove this grape?')) return
-    setViewing(null)
+    setBloom(null)
     try { await api.deleteCheckin(id, c) } catch (e) { toast('Failed: ' + (e.message || e)) }
   }
 
@@ -228,7 +231,9 @@ export default function Room({ api, user, id }) {
           labelOf={(uid) => room.members[uid]?.name}
           canAdd={isCurrent && !busy && mine.length < target}
           onAdd={() => setAddOpen(true)}
-          onOpen={openViewer}
+          onPressStart={pressStart}
+          onPressEnd={pressEnd}
+          hiddenId={bloom?.c.id}
         />
         </div>
         {goals.length > 1 && (
@@ -276,7 +281,7 @@ export default function Room({ api, user, id }) {
           <h2 className="label-mono">this week's moments</h2>
           <div className="moments">
             {moments.map((c) => (
-              <button key={c.id} className="moment" onClick={(e) => openViewer(c, e.currentTarget.getBoundingClientRect())}>
+              <button key={c.id} className="moment" onClick={(e) => openFrom(c, e.currentTarget.getBoundingClientRect(), goals.find((g) => g.id === goalIdOf(c, goals))?.color)}>
                 {c.mediaUrl ? (
                   c.mediaType === 'video'
                     ? <video src={c.mediaUrl} muted playsInline autoPlay loop />
@@ -304,7 +309,7 @@ export default function Room({ api, user, id }) {
                 const n = Math.min(list.length, g.target)
                 return (
                   <div key={g.id} className={`person-bunch ${n >= g.target ? 'done' : ''}`}>
-                    <GrapeCluster target={g.target} checkins={list} color={g.color} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onOpen={(c, rect) => { setPersonUid(null); openViewer(c, rect) }} />
+                    <GrapeCluster target={g.target} checkins={list} color={g.color} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onPressStart={pressStart} onPressEnd={pressEnd} hiddenId={bloom?.c.id} />
                     <b>{g.title}</b>
                     <small className="mono muted">{n}/{g.target}{n >= g.target ? ' · done' : ''}</small>
                   </div>
@@ -341,17 +346,17 @@ export default function Room({ api, user, id }) {
 
       {camera && <Camera initialMode={camera} onClose={() => setCamera(null)} onDone={add} />}
 
-      {viewing && (
-        <Viewer
-          checkin={viewing}
-          goal={goals.length > 1 ? goalTitle(viewing) : null}
-          member={memberOf(viewing.uid)}
-          isMe={viewing.uid === user.uid}
-          color={colorOf(goals.find((g) => g.id === goalIdOf(viewing, goals))?.color)}
-          from={viewFrom}
-          canRemove={viewing.uid === user.uid && viewing.week === thisWeek}
-          onRemove={() => remove(viewing)}
-          onClose={() => setViewing(null)}
+      {bloom && (
+        <Bloom
+          key={bloom.c.id}
+          item={bloom}
+          phase={bloom.phase}
+          goal={goals.length > 1 ? goalTitle(bloom.c) : null}
+          member={memberOf(bloom.c.uid)}
+          canRemove={bloom.c.uid === user.uid && bloom.c.week === thisWeek}
+          onRemove={() => remove(bloom.c)}
+          onClose={closeBloom}
+          onDone={() => setBloom(null)}
         />
       )}
 

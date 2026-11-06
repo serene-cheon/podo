@@ -1,0 +1,108 @@
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import Avatar from './Avatar.jsx'
+import { timeLabel } from '../lib/week.js'
+
+// 포도알 하나가 끊김 없이 모양만 바뀌는 인터랙션
+//   grape(동그라미, 포도알 자리) → press(그 자리에서 둥근 네모로 커짐, 안의 사진/메모가 보임)
+//   → open(화면 가득 펼쳐짐) → 닫으면 다시 grape 로 쏙
+const SPRING = 'cubic-bezier(.22,1.3,.36,1)'
+const SMOOTH = 'cubic-bezier(.2,.85,.25,1)'
+const SHRINK = 'cubic-bezier(.45,0,.55,1)'
+
+function boxes(rect, tall) {
+  const vw = window.innerWidth
+  const vh = window.innerHeight
+  const cx = rect.left + rect.width / 2
+  const cy = rect.top + rect.height / 2
+  const d = Math.min(rect.width, rect.height)
+  const grape = { x: cx - d / 2, y: cy - d / 2, w: d, h: d, r: d / 2 }
+  const s = Math.min(Math.max(d * 2, 108), 156)
+  const press = {
+    x: Math.min(Math.max(cx - s / 2, 10), vw - s - 10),
+    y: Math.min(Math.max(cy - s / 2, 10), vh - s - 10),
+    w: s, h: s, r: s * 0.3,
+  }
+  const w = Math.min(vw - 24, 440)
+  const h = tall ? Math.min(vh - 130, w * 1.3) : Math.min(w, vh - 130)
+  const open = { x: (vw - w) / 2, y: Math.max(14, (vh - h) / 2 - 28), w, h, r: 30 }
+  return { grape, press, open }
+}
+const css = (b) => ({ left: `${b.x}px`, top: `${b.y}px`, width: `${b.w}px`, height: `${b.h}px`, borderRadius: `${b.r}px` })
+
+/**
+ * item: { c(체크인), rect(시작 포도알 위치), color(골 색), isMine }
+ * phase: 'press' | 'open' | 'cancel' | 'closing'
+ */
+export default function Bloom({ item, phase, member, goal, canRemove, onRemove, onClose, onDone }) {
+  const { c, rect, color, isMine } = item
+  const hasMedia = !!(c.mediaType && c.mediaUrl)
+  const B = useMemo(() => boxes(rect, hasMedia), [rect, hasMedia])
+  const target = phase === 'press' ? 'press' : phase === 'open' ? 'open' : 'grape'
+  const elRef = useRef(null)
+  const cur = useRef(null)
+  const [shown, setShown] = useState('grape') // CSS 단계 (배경·글씨 페이드)
+
+  useLayoutEffect(() => {
+    const el = elRef.current
+    const from = B[cur.current || 'grape']
+    const to = B[target]
+    Object.assign(el.style, css(to))
+    const anim = el.animate?.([css(from), css(to)], {
+      duration: target === 'press' ? 420 : target === 'open' ? 560 : 380,
+      easing: target === 'press' ? SPRING : target === 'open' ? SMOOTH : SHRINK,
+    })
+    cur.current = target
+    const raf = requestAnimationFrame(() => setShown(target))
+    if (target === 'grape') {
+      if (anim) anim.onfinish = onDone
+      else onDone()
+    }
+    return () => cancelAnimationFrame(raf)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, B])
+
+  useEffect(() => {
+    if (target !== 'open') return
+    const onKey = (e) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [target, onClose])
+
+  const wash = isMine ? color?.me : color?.friend
+  const bg = wash
+    ? `radial-gradient(circle at 34% 28%, #ffffff66, transparent 32%), radial-gradient(120% 120% at 35% 30%, ${wash[0]}, ${wash[1]})`
+    : 'var(--grape-soft)'
+
+  return (
+    <div className={`bloom bloom-${shown}`} onClick={target === 'open' ? onClose : undefined}>
+      <div className="bloom-back" />
+      <div ref={elRef} className="bloom-el" style={{ background: bg, ...css(B.grape) }} onClick={(e) => e.stopPropagation()}>
+        {hasMedia && (c.mediaType === 'video'
+          ? <video src={c.mediaUrl} autoPlay loop playsInline muted />
+          : <img src={c.mediaUrl} alt="" draggable={false} />)}
+        {!hasMedia && c.note && <p className={`bloom-note ${c.note.length > 30 ? 'long' : ''}`}>{c.note}</p>}
+        {!hasMedia && !c.note && <span className="bloom-dot" />}
+        <div className={`bloom-info ${hasMedia ? 'on-media' : ''}`}>
+          {hasMedia && c.note && <p className="bloom-note-sm">{c.note}</p>}
+          <div className="pv-meta">
+            <Avatar name={member?.name} photo={member?.photo} size={30} />
+            <div>
+              <b>{isMine ? 'You' : member?.name || 'Unknown'}</b>
+              <small>{timeLabel(c.createdAt)}{goal ? ` · ${goal}` : ''}</small>
+            </div>
+          </div>
+        </div>
+        <button className="bloom-close" onClick={onClose} aria-label="Close">✕</button>
+      </div>
+      {canRemove && (
+        <button
+          className="bloom-remove"
+          style={{ top: `${B.open.y + B.open.h + 14}px` }}
+          onClick={(e) => { e.stopPropagation(); onRemove() }}
+        >
+          remove grape
+        </button>
+      )}
+    </div>
+  )
+}
