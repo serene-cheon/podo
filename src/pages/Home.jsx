@@ -8,6 +8,7 @@ import { isDemo, BUILD } from '../lib/api.js'
 import { weekKey, weekLabel, daysLeft, weekStart } from '../lib/week.js'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import GoalsEditor from '../components/GoalsEditor.jsx'
+import { useTheme, setTheme } from '../lib/theme.js'
 import { goalsOf, goalIdOf, cleanGoals, newGoalId } from '../lib/goals.js'
 
 export default function Home({ api, user }) {
@@ -132,6 +133,7 @@ function WeekDots({ checkins }) {
 
 // 프로필: 계정 정보 + 닉네임 변경 + 로그아웃
 function ProfileSheet({ api, user, onClose }) {
+  const theme = useTheme()
   const [name, setName] = useState(user.name)
   const [busy, setBusy] = useState(false)
   const trimmed = name.trim()
@@ -162,6 +164,14 @@ function ProfileSheet({ api, user, onClose }) {
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} required placeholder="what friends will see" />
         </label>
         <p className="mono muted small">shown on your grapes and in every room you're in</p>
+        <div className="account-row">
+          <span className="mono muted">style</span>
+          <div className="seg" role="group" aria-label="App style">
+            {['doodle', 'modern'].map((t) => (
+              <button type="button" key={t} className={theme === t ? 'on' : ''} onClick={() => setTheme(t)}>{t}</button>
+            ))}
+          </div>
+        </div>
         <div className="account-row">
           <span className="mono muted">account</span>
           <span className="mono">{isDemo ? 'demo account' : 'signed in with Google'}</span>

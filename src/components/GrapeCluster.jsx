@@ -24,7 +24,7 @@ const jitter = (i, k) => {
   return x - Math.floor(x) - 0.5
 }
 
-function layout(target) {
+function layout(target, clean) {
   const rows = LAYOUTS[target] || autoRows(Math.max(1, target))
   const maxRow = Math.max(...rows)
   const width = maxRow * DX
@@ -33,13 +33,15 @@ function layout(target) {
     const startX = (width - n * DX) / 2 + DX / 2
     for (let i = 0; i < n; i++) {
       const k = pts.length
-      pts.push({ x: startX + i * DX + jitter(k, 1) * 2.5, y: TOP + r * DY + R + jitter(k, 2) * 2.5, r: R + jitter(k, 3) * 1.6, rot: jitter(k, 4) * 40 })
+      const j = clean ? 0 : 1
+      pts.push({ x: startX + i * DX + jitter(k, 1) * 2.5 * j, y: TOP + r * DY + R + jitter(k, 2) * 2.5 * j, r: clean ? R : R + jitter(k, 3) * 1.6, rot: jitter(k, 4) * 40 * j })
     }
   })
   return { pts, width, height: TOP + rows.length * DY + R / 2 + 6 }
 }
 
 import { GOAL_COLORS, colorOf } from '../lib/colors.js'
+import { useTheme } from '../lib/theme.js'
 
 const INK = '#5A3A9E' // 줄기·빈 알 손그림 선
 
@@ -52,7 +54,8 @@ const INK = '#5A3A9E' // 줄기·빈 알 손그림 선
  */
 export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin }) {
   const gid = useId().replace(/:/g, '')
-  const { pts, width, height } = layout(target)
+  const modern = useTheme() === 'modern'
+  const { pts, width, height } = layout(target, modern)
   if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
   const filled = Math.min(checkins.length, target)
   const team = meUid !== undefined
@@ -117,6 +120,29 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const other = team ? c?.uid !== meUid : tint === 'other'
     const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
     const col = colorOf(ci)
+    if (modern) {
+      // 모던: 단색 동그라미. 사진이 있으면 동그라미 안에 사진
+      const photo = c?.mediaType === 'photo' && c.mediaUrl
+      return (
+        <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
+          <circle r={p.r} fill={other ? col.friend[1] : col.me[1]} />
+          {photo && (
+            <>
+              <clipPath id={`c${i}${gid}`}><circle r={p.r} /></clipPath>
+              <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
+            </>
+          )}
+          {/* 내 알은 얇은 링으로 구분 */}
+          {team && !other && <circle r={p.r + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
+          {!photo && team && (
+            <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={other ? col.label : '#fff'}>
+              {other ? [...(labelOf?.(c.uid) || '?')][0].toUpperCase() : 'ME'}
+            </text>
+          )}
+          {c?.mediaType === 'video' && <path d="M-4 -6 L7 0 L-4 6 Z" fill="#fff" opacity=".95" transform={team ? 'translate(0 9) scale(.6)' : undefined} />}
+        </g>
+      )
+    }
     return (
       <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
         <g transform={`rotate(${p.rot})`}>
@@ -169,7 +195,14 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         </filter>
       </defs>
 
-      {/* 손그림 줄기 + 덩굴손 + 수채화 잎 */}
+      {modern ? (
+        // 모던: 깔끔한 직선 줄기 + 작은 잎
+        <g>
+          <path d={`M${cx} 8 V${TOP - 4}`} stroke="#17151C" strokeWidth="1.6" strokeLinecap="round" />
+          <path d={`M${cx + 1} 20 C${cx + 10} 10 ${cx + 24} 10 ${cx + 30} 15 C${cx + 22} 24 ${cx + 10} 25 ${cx + 1} 20Z`} fill="#8FCBA9" />
+        </g>
+      ) : (
+      <>
       <g filter={`url(#h${gid})`} fill="none" stroke={INK} strokeWidth="1.8" strokeLinecap="round">
         <path d={`M${cx + 1} 6 C${cx - 3} 18 ${cx + 3} 28 ${cx} ${TOP - 4}`} />
         <path d={`M${cx - 1} 20 C${cx - 10} 16 ${cx - 16} 22 ${cx - 13} 27 C${cx - 10} 31 ${cx - 6} 26 ${cx - 9} 24`} />
@@ -180,6 +213,9 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         fill={`url(#l${gid})`}
       />
       <path filter={`url(#h${gid})`} d={`M${cx + 4} 21 C${cx + 16} 17 ${cx + 26} 15 ${cx + 38} 14`} stroke={INK} strokeWidth="1.2" fill="none" opacity=".55" />
+
+      </>
+      )}
 
       {pts.map((_, i) => i).map((i) => {
         const p = pts[i]
@@ -210,6 +246,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             {isFilled ? (
               <g className="press-wrap">{drawFilled(i, p, c, false)}</g>
             ) : (
+              modern ? (
+                <g>
+                  <circle r={p.r - 1} fill={isNext ? '#fff' : 'none'} stroke={isNext ? '#17151C' : '#E3E0E8'} strokeWidth={isNext ? 1.5 : 1.2} />
+                  {isNext && <path d="M-5.5 0 H5.5 M0 -5.5 V5.5" stroke="#17151C" strokeWidth="1.6" strokeLinecap="round" />}
+                </g>
+              ) : (
               <g filter={`url(#h${gid})`}>
                 <circle
                   r={p.r - 1.5}
@@ -221,6 +263,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                 />
                 {isNext && <path d="M-6 0 H6 M0 -6 V6" stroke={colorOf(color).ink} strokeWidth="2" strokeLinecap="round" />}
               </g>
+              )
             )}
           </g>
         )

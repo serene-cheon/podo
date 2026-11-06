@@ -324,3 +324,48 @@ button.member:active { background: var(--grape-soft); }
 .bloom-remove { position: fixed; left: 50%; transform: translate(-50%, 8px); border: 0; background: rgba(255,255,255,.92); color: var(--danger); font-size: 14px; padding: 9px 16px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; }
 .bloom-open .bloom-remove { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; transition: opacity .3s .35s, transform .4s .35s; }
 .build-tag { font-size: 11px !important; opacity: .7; }
+
+/* ───────── modern 스타일 (프로필 → style → modern) ───────── */
+.seg { display: inline-flex; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: none; border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--muted); }
+.seg button.on { background: var(--ink); color: #fff; }
+[data-theme="modern"] {
+  --card: #FFFFFF;
+  --line: #ECEAF0;
+  --grape: #17151C;
+  --grape-2: #7F5FCF;
+  --grape-soft: #F4F2F7;
+  --radius: 26px;
+}
+[data-theme="modern"] body {
+  background-color: #FAFAFB;
+  background-image: radial-gradient(#D9D6E0 1px, transparent 1.2px);
+  background-size: 22px 22px;
+}
+[data-theme="modern"] .brand-hand { font-family: var(--sans); font-weight: 600; font-size: 24px; letter-spacing: -.04em; color: var(--ink); }
+[data-theme="modern"] .brand-hand::after { content: ''; display: inline-block; width: 8px; height: 8px; margin-left: 3px; border-radius: 50%; background: #7F5FCF; vertical-align: 2px; }
+[data-theme="modern"] .label-mono,
+[data-theme="modern"] .my-bunch-head .mono,
+[data-theme="modern"] .login-top .mono,
+[data-theme="modern"] .week-nav .mono,
+[data-theme="modern"] .legend,
+[data-theme="modern"] .form label, [data-theme="modern"] .label { text-transform: uppercase; letter-spacing: .1em; font-size: 11px; font-weight: 500; }
+[data-theme="modern"] .my-bunch, [data-theme="modern"] .team-bunch, [data-theme="modern"] .room-card, [data-theme="modern"] .member {
+  background: #fff; border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(20,10,40,.03);
+}
+[data-theme="modern"] .my-bunch-head h2 { font-size: 26px; font-weight: 500; letter-spacing: -.035em; }
+[data-theme="modern"] .big-count b { color: var(--ink); font-weight: 500; }
+[data-theme="modern"] .btn { font-weight: 500; }
+[data-theme="modern"] .btn.primary { background: var(--ink); border-color: var(--ink); }
+[data-theme="modern"] .btn.ghost { background: #fff; border-color: var(--line); }
+[data-theme="modern"] .demo-banner { color: var(--ink); border: 1px solid var(--line); background: #fff; }
+[data-theme="modern"] .week-dots span.on i { background: var(--ink); }
+[data-theme="modern"] .week-dots span.today i { outline-color: var(--ink); }
+[data-theme="modern"] .goal-tab.on { color: var(--ink); }
+[data-theme="modern"] .add-options button { color: var(--ink); border-color: var(--line); }
+[data-theme="modern"] .chips button.on { background: var(--ink); border-color: var(--ink); }
+[data-theme="modern"] .link-mono { color: var(--ink); }
+[data-theme="modern"] .invite-code { border-style: solid; border-color: var(--line); background: #FAFAFB; color: var(--ink); }
+[data-theme="modern"] .sheet { background: #fff; }
+[data-theme="modern"] .login-title { font-weight: 500; letter-spacing: -.045em; }
+[data-theme="modern"] .login-title span { color: #A9A6B0; }

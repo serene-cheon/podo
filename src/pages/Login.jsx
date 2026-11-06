@@ -15,7 +15,7 @@ export default function Login({ api }) {
         <span className="brand-hand">podoit</span>
         <span className="mono">every day counts</span>
       </header>
-      <h1 className="login-title">Set goals,<br />Fill grapes,<br />Grow<br />together.</h1>
+      <h1 className="login-title">Set goals,<br />Fill grapes,<br /><span>Grow<br />together.</span></h1>
       <div className="login-doodle"><GrapeDoodle size={190} /></div>
       <p className="mono login-sub">a tiny weekly goal app for you &amp; your friends</p>
       <button className="btn google" onClick={go} disabled={busy}>
