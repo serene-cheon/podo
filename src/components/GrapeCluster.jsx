@@ -112,6 +112,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   const movePress = (e) => {
     const s0 = pressRef.current
     if (!s0) return
+    // 누르자마자 쓱 밀면 → 확대 말고 골 넘기기 스와이프 (꾹 누른 뒤 끌 때만 확대)
+    if (!s0.held) {
+      if (performance.now() - s0.t >= 180) s0.held = true
+      else if (Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 12) return cancelPress()
+      else return
+    }
     let hit = null
     flyRefs.current.forEach((el, k) => {
       if (!el || !slots[k]) return
