@@ -171,26 +171,13 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   const mountedAt = useRef(performance.now())
   const origin = () => (nextIdx >= 0 ? pts[nextIdx] : { x: cx, y: TOP - 8 })
 
+  // 처음 나타날 때: 제자리에서 위→아래 순서로 살짝 떠오르며 (튕김 없이 차분하게)
   const burst = (idx) => {
-    const o = origin()
-    idx.sort((a, b) => Math.hypot(pts[a].x - o.x, pts[a].y - o.y) - Math.hypot(pts[b].x - o.x, pts[b].y - o.y))
-    idx.forEach((i, n) => {
-      const el = flyRefs.current[i]
-      if (!el?.animate) return
-      const dx = o.x - pts[i].x
-      const dy = o.y - pts[i].y
-      const len = Math.hypot(dx, dy) || 1
-      const side = n % 2 ? 1 : -1 // 좌우로 번갈아 휘는 곡선
-      const px = (-dy / len) * 16 * side
-      const py = (dx / len) * 16 * side
-      el.animate([
-        { transform: `translate(${dx}px, ${dy}px) scale(.12)`, opacity: 0 },
-        { transform: `translate(${dx * 0.45 + px}px, ${dy * 0.45 + py}px) scale(.7)`, opacity: 1, offset: 0.45 },
-        { transform: 'translate(0px, 0px) scale(1.1)', offset: 0.8 },
-        { transform: 'none' },
-      ], { duration: 560, delay: 80 + n * 60, easing: 'cubic-bezier(.33,.72,.3,1)', fill: 'backwards' })
-    })
-    emptyRefs.current.forEach((el, i) => el && i !== nextIdx && !slots[i] && el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200 + idx.length * 40, fill: 'backwards' }))
+    const order = [...idx].sort((a, b) => pts[a].y - pts[b].y || pts[a].x - pts[b].x)
+    const rise = [{ transform: 'translateY(6px) scale(.92)', opacity: 0 }, { transform: 'none', opacity: 1 }]
+    const ease = { duration: 420, easing: 'cubic-bezier(.22,.8,.3,1)', fill: 'backwards' }
+    order.forEach((i, n) => flyRefs.current[i]?.animate?.(rise, { ...ease, delay: n * 28 }))
+    emptyRefs.current.forEach((el, i) => el && !slots[i] && el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 360, delay: 80 + (pts[i].y - pts[0].y) * 0.8, easing: 'ease-out', fill: 'backwards' }))
   }
 
   const collapse = () => new Promise((resolve) => {
@@ -410,7 +397,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             aria-label={isNext ? 'Add a grape' : undefined}
           >
             {isFilled ? (
-              <g ref={(el) => { flyRefs.current[i] = el }}><g className="press-wrap">{drawFilled(i, p, c, false)}</g></g>
+              <g className="fly" ref={(el) => { flyRefs.current[i] = el }}><g className="press-wrap">{drawFilled(i, p, c, false)}</g></g>
             ) : (
               <g ref={(el) => { emptyRefs.current[i] = el }}>{modern ? (
                 <g className="slot">
