@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import GrapeCluster from '../components/GrapeCluster.jsx'
+import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
 import { toast } from '../components/Toast.jsx'
@@ -100,7 +100,7 @@ function MyBunch({ api, user, rooms }) {
         <h2>{complete ? 'My podo is complete!' : 'My podo'}</h2>
         <span className="mono muted">{weekLabel(week).toLowerCase()}</span>
       </div>
-      <GrapeCluster target={total} checkins={filled} size={1} maxWidth={240} colorOfCheckin={(c) => colorById[c.id] ?? 0} />
+      <GrapeCluster target={total} checkins={filled} size={GRAPE_SCALE} maxWidth={grapeMaxWidth()} colorOfCheckin={(c) => colorById[c.id] ?? 0} />
       <p className="big-count"><b>{filled.length}</b><span>/{total}</span></p>
       <p className="mono muted">
         {doneGoals} of {allGoals.length} {allGoals.length === 1 ? 'goal' : 'goals'} done

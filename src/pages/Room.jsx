@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import GrapeCluster from '../components/GrapeCluster.jsx'
+import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
 import Camera from '../components/Camera.jsx'
@@ -252,8 +252,8 @@ export default function Room({ api, user, id }) {
           target={total}
           color={goal.color}
           checkins={teamFilled}
-          size={1.7}
-          maxWidth={340}
+          size={GRAPE_SCALE}
+          maxWidth={grapeMaxWidth(36)}
           key={goal.id}
           apiRef={bunchApi}
           slotted

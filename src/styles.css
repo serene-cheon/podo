@@ -421,3 +421,15 @@ button.member:active { background: var(--grape-soft); }
 .cluster.placing .grape.on { opacity: .3; }
 .grape .slot { transition: transform .2s cubic-bezier(.3,1.6,.5,1); transform-box: fill-box; transform-origin: center; }
 .grape.hot .slot { transform: scale(1.1); }
+
+/* 포도알 55px 그대로 들어가도록 송이 카드 여백 */
+.my-bunch, .team-bunch { padding-left: 16px; padding-right: 16px; }
+/* Team podo: 카드 배경·테두리 없이, 제목은 작게 */
+[data-theme="modern"] .team-bunch, .team-bunch { background: transparent; border: 0; box-shadow: none; padding: 6px 0 10px; border-radius: 0; }
+.team-bunch .my-bunch-head h2 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; }
+.team-bunch .my-bunch-head .mono { font-size: 12px; }
+.team-bunch .big-count.small b { font-size: 20px; }
+.team-bunch .big-count.small span { font-size: 13px; }
+.team-bunch.complete { box-shadow: none; }
+/* 점 그리드 없이 깨끗한 흰 배경 */
+[data-theme="modern"] body, body { background: #FFFFFF; background-image: none; }

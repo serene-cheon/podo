@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { SQ } from './GrapeCluster.jsx'
+import { SQ, GRAPE_PX } from './GrapeCluster.jsx'
 
 // 하단 + 버튼: 누르면 Snap Now / Snap Later 두 버튼이 떠요.
 export function SnapBar({ open, setOpen, onSnapNow, onSnapLater, buttonRef }) {
@@ -17,7 +17,7 @@ export function SnapBar({ open, setOpen, onSnapNow, onSnapLater, buttonRef }) {
   )
 }
 
-const SIZE = 64
+const SIZE = GRAPE_PX
 
 /**
  * 찍은 사진이 포도알이 되어 떠 있고, 끌어다 빈 칸에 놓으면 그 칸에 들어가요.

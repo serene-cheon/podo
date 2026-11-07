@@ -8,8 +8,14 @@ const R = 20
 const DX = R * 2 + 4
 const DY = R * 1.8 + 2
 const TOP = 46
-export const SQ = 0.46 // 모던 포도알 모서리 둥글기 (반지름 대비)
-const GAP_M = 6 // 모던 포도알 사이 간격
+// 포도알 실제 크기 (아이폰 16/17, 393pt 기준): 55 × 55, 모서리 22, 칸 간격 9
+export const GRAPE_PX = 55
+export const GRAPE_SCALE = GRAPE_PX / (R * 2) // SVG 단위 → 화면 px
+export const SQ = 22 / (GRAPE_PX / 2) // 모서리 반지름 / 포도알 반지름 = 0.8
+const GAP_M = 9 / GRAPE_SCALE // 칸 사이 9px
+const PAD = 4 // 송이 좌우 여백 (SVG 단위)
+// 송이를 정확한 크기로 그리려면: size={GRAPE_SCALE}, maxWidth={grapeMaxWidth()} (좁은 화면에서만 줄어듦)
+export const grapeMaxWidth = (inset = 68) => Math.min(window.innerWidth, 480) - inset
 
 // 8알 이상: 5,4,3,2,1 처럼 한 줄씩 줄어드는 송이 모양
 function autoRows(n) {
@@ -78,7 +84,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   const gid = useId().replace(/:/g, '')
   const modern = useTheme() === 'modern'
   const { pts, width, height } = layout(target, modern)
-  if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
+  if (maxWidth) size = Math.min(size, maxWidth / (width + PAD * 2))
   const slots = placeInSlots(checkins, target, slotted)
   const filled = slots.filter(Boolean).length
   const nextIdx = slots.indexOf(null) // 다음 빈 칸 (+)
@@ -257,8 +263,8 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   return (
     <svg
       className={`cluster ${pressed !== null ? 'has-press' : ''} ${dimFilled ? 'placing' : ''}`}
-      viewBox={`-6 0 ${width + 12} ${height}`}
-      width={(width + 12) * size}
+      viewBox={`${-PAD} 0 ${width + PAD * 2} ${height}`}
+      width={(width + PAD * 2) * size}
       height={height * size}
       role="img"
       aria-label={`Grapes ${filled}/${target}`}
