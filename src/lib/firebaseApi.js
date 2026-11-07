@@ -118,7 +118,7 @@ export function createFirebaseApi(config) {
       })
     },
 
-    async addCheckin(user, roomId, { week, goalId, blob, mediaType, note }) {
+    async addCheckin(user, roomId, { week, goalId, slot, blob, mediaType, note }) {
       let mediaUrl = null
       let mediaPath = null
       if (blob) {
@@ -132,6 +132,7 @@ export function createFirebaseApi(config) {
         uid: user.uid,
         week,
         goalId: goalId || null,
+        slot: Number.isInteger(slot) ? slot : null,
         createdAt: serverTimestamp(),
         mediaType: blob ? mediaType : null,
         mediaUrl,

@@ -23,7 +23,7 @@ export function loadApi() {
   API 모양 (두 구현이 똑같이 따릅니다)
   user    = { uid, name, photo, email }
   room    = { id, name, goals: [{id, title, target}], goal, target(첫 골, 호환용), ownerId, memberIds: [uid], members: { [uid]: {name, photo} } }
-  checkin = { id, uid, week, goalId, createdAt(ms), mediaType: 'photo'|'video'|null, mediaUrl, note }
+  checkin = { id, uid, week, goalId, slot(포도송이에서 고른 칸), createdAt(ms), mediaType: 'photo'|'video'|null, mediaUrl, note }
 
   onAuth(cb) -> unsubscribe
   signIn(), signOut()
@@ -34,7 +34,7 @@ export function loadApi() {
   joinRoom(user, roomId)
   updateRoom(roomId, { name, goals, goal, target }) 방장만: 방 설정 변경
   watchCheckins(roomId, week, cb) -> unsubscribe
-  addCheckin(user, roomId, {week, goalId, blob, mediaType, note})
+  addCheckin(user, roomId, {week, goalId, slot, blob, mediaType, note})
   deleteCheckin(roomId, checkin)
 */
 

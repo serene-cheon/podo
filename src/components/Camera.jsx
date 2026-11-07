@@ -31,7 +31,7 @@ async function compressImageFile(file) {
  * 전체 화면 카메라. mode: 'photo' | 'video'(3초)
  * onDone({ blob, mediaType })
  */
-export default function Camera({ initialMode = 'photo', onDone, onClose }) {
+export default function Camera({ initialMode = 'photo', photoOnly, onDone, onClose }) {
   const videoRef = useRef(null)
   const streamRef = useRef(null)
   const [mode, setMode] = useState(initialMode)
@@ -123,10 +123,10 @@ export default function Camera({ initialMode = 'photo', onDone, onClose }) {
         </div>
       ) : (
         <>
-          <div className="cam-modes">
+          {!photoOnly && <div className="cam-modes">
             <button className={mode === 'photo' ? 'on' : ''} onClick={() => setMode('photo')} disabled={recording}>Photo</button>
             <button className={mode === 'video' ? 'on' : ''} onClick={() => setMode('video')} disabled={recording}>3s video</button>
-          </div>
+          </div>}
           <div className="cam-controls">
             <span style={{ width: 52 }} />
             <button

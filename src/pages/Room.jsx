@@ -5,10 +5,10 @@ import Sheet from '../components/Sheet.jsx'
 import Camera from '../components/Camera.jsx'
 import Bloom from '../components/Bloom.jsx'
 import GrapeLoader from '../components/GrapeLoader.jsx'
-import Launcher, { Flyer } from '../components/Launcher.jsx'
+import { SnapBar, PlaceGrape } from '../components/Snap.jsx'
 import Confetti from '../components/Confetti.jsx'
 import { toast } from '../components/Toast.jsx'
-import { SproutDoodle, DoodleIcon } from '../components/Doodle.jsx'
+import { SproutDoodle } from '../components/Doodle.jsx'
 import { makeWeekImage, saveImage } from '../lib/weekImage.js'
 import { weekKey, shiftWeek, weekLabel, daysLeft } from '../lib/week.js'
 import { goalsOf, goalIdOf, cleanGoals, goalFields } from '../lib/goals.js'
@@ -22,9 +22,7 @@ export default function Room({ api, user, id }) {
   const [room, setRoom] = useState(undefined)
   const [week, setWeek] = useState(thisWeek)
   const [data, setData] = useState({ week: null, list: [] })
-  const [addOpen, setAddOpen] = useState(false)
   const [camera, setCamera] = useState(null) // 'photo' | 'video'
-  const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   // 포도알 → 둥근 네모 → 펼침 (Bloom). phase: press | open | cancel | closing
   const [bloom, setBloom] = useState(null)
@@ -39,9 +37,11 @@ export default function Room({ api, user, id }) {
   const [goalPick, setGoalPick] = useState(null)
   const [personUid, setPersonUid] = useState(null) // 개별 포도송이 보기
   // 발사 버튼 → 옵션 고르기 → 포도알이 날아가 빈 칸에 박힘
-  const launchRef = useRef(null)
-  const [flyer, setFlyer] = useState(null) // { from, to, color, payload, waiting }
-  const [noteOpen, setNoteOpen] = useState(false)
+  // 하단 + → Snap Now → 사진 찍기 → 사진 포도알을 빈 칸으로 끌어다 놓기
+  const snapRef = useRef(null)
+  const [snapOpen, setSnapOpen] = useState(false)
+  const [placing, setPlacing] = useState(null) // { blob, url, from }
+  const [hot, setHot] = useState(null) // 손가락 아래 빈 칸
 
   useEffect(() => api.watchRoom(id, setRoom), [api, id])
   useEffect(() => api.watchCheckins(id, week, (list) => setData({ week, list })), [api, id, week])
@@ -116,14 +116,12 @@ export default function Room({ api, user, id }) {
     seen.current = { key, done }
   }, [data.week, week, done, total, goal.id])
 
-  async function add({ blob = null, mediaType = null, note: n } = {}) {
+  async function add({ blob = null, mediaType = null, note: n, slot } = {}) {
     setCamera(null)
-    setAddOpen(false)
     setBusy(true)
     try {
-      await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, blob, mediaType, note: (n ?? note).trim() })
+      await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, slot, blob, mediaType, note: (n || '').trim() })
       vibrate(20)
-      setNote('')
       if (mine.length + 1 === target) toast(`You finished “${goal.title}” this week 🍇`)
     } catch (e) {
       toast('Could not add: ' + (e.message || e))
@@ -132,27 +130,23 @@ export default function Room({ api, user, id }) {
     }
   }
 
-  // 옵션 고르기: 사진/영상은 카메라 → 붙이기 누르면 발사, 메모는 한 줄 쓰고 발사, 그냥은 바로 발사
-  function choose(opt) {
-    if (opt === 'photo' || opt === 'video') setCamera(opt)
-    else if (opt === 'note') setNoteOpen(true)
-    else shoot({})
-  }
-  function shoot(payload) {
+  function snapNow() { setCamera('photo') }
+  function snapLater() { toast('Snap Later is coming soon') }
+  function photoTaken({ blob }) {
     setCamera(null)
-    setNoteOpen(false)
-    const from = launchRef.current?.getBoundingClientRect()
-    const to = bunchApi.current?.nextRect?.()
-    if (!from || !to) return add(payload)
-    navigator.vibrate?.(10)
-    setFlyer({ key: Date.now(), from, to, color: gc, payload, waiting: false })
+    setPlacing({ blob, url: URL.createObjectURL(blob), from: snapRef.current?.getBoundingClientRect() })
   }
-  async function landed() {
-    // 박힌 자리에서 (업로드가 끝날 때까지) 살짝 두근두근 → 진짜 포도알로 바뀜
-    setFlyer((f) => f && { ...f, waiting: true })
-    const payload = flyer?.payload || {}
-    await add(payload)
-    setFlyer(null)
+  async function placeAt(slot) {
+    const p = placing
+    await add({ blob: p.blob, mediaType: 'photo', slot })
+    URL.revokeObjectURL(p.url)
+    setPlacing(null)
+    setHot(null)
+  }
+  function discard() {
+    if (placing) URL.revokeObjectURL(placing.url)
+    setPlacing(null)
+    setHot(null)
   }
 
   async function remove(c) {
@@ -258,14 +252,17 @@ export default function Room({ api, user, id }) {
           target={total}
           color={goal.color}
           checkins={teamFilled}
-          size={1.4}
-          maxWidth={300}
+          size={1.7}
+          maxWidth={340}
           key={goal.id}
           apiRef={bunchApi}
+          slotted
+          dimFilled={!!placing}
+          hotSlot={hot}
           meUid={user.uid}
           labelOf={(uid) => room.members[uid]?.name}
           canAdd={isCurrent && !busy && mine.length < target}
-          onAdd={() => setAddOpen(true)}
+          onAdd={() => setSnapOpen(true)}
           onPressStart={pressStart}
           onPressEnd={pressEnd}
           hiddenId={bloom?.c.id}
@@ -284,7 +281,7 @@ export default function Room({ api, user, id }) {
           {busy ? 'Adding…'
             : !isCurrent ? `you added ${Math.min(mine.length, target)}/${target}`
             : mine.length >= target ? `you're done this week (${target}/${target})`
-            : `tap + to add your grape · you ${mine.length}/${target}`}
+            : `tap + to snap your grape · you ${mine.length}/${target}`}
         </p>
         {isCurrent && done < total && <small className="mono muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · fill it together</small>}
         {total > 0 && (done >= total || !isCurrent) && (
@@ -368,25 +365,23 @@ export default function Room({ api, user, id }) {
         />
       )}
 
-      {addOpen && (
-        <Sheet title={goals.length > 1 ? `Add a grape · ${goal.title}` : 'Add a grape'} onClose={() => setAddOpen(false)}>
-          <input className="note-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note (optional)" maxLength={60} />
-          <div className="add-options">
-            <button onClick={() => setCamera('photo')}><DoodleIcon name="photo" />photo</button>
-            <button onClick={() => setCamera('video')}><DoodleIcon name="video" />3s video</button>
-            <button onClick={() => add()}><DoodleIcon name="grape" />just add</button>
-          </div>
-        </Sheet>
+      {camera && <Camera initialMode="photo" photoOnly onClose={() => setCamera(null)} onDone={photoTaken} />}
+
+      {placing && (
+        <PlaceGrape
+          url={placing.url}
+          color={gc}
+          from={placing.from}
+          getSlots={() => bunchApi.current?.emptySlots?.() || []}
+          onHot={setHot}
+          onPlace={placeAt}
+          onCancel={discard}
+        />
       )}
 
-      {camera && <Camera initialMode={camera} onClose={() => setCamera(null)} onDone={shoot} />}
-
-      {noteOpen && <NoteSheet color={gc} onClose={() => setNoteOpen(false)} onShoot={(n) => shoot({ note: n })} />}
-
-      {isCurrent && mine.length < target && !bloom && !camera && !noteOpen && !addOpen && !settingsOpen && !personUid && (
-        <Launcher color={gc} buttonRef={launchRef} onChoose={choose} />
+      {isCurrent && mine.length < target && !placing && !bloom && !camera && !settingsOpen && !personUid && (
+        <SnapBar open={snapOpen} setOpen={setSnapOpen} onSnapNow={snapNow} onSnapLater={snapLater} buttonRef={snapRef} />
       )}
-      {flyer && <Flyer key={flyer.key} from={flyer.from} to={flyer.to} color={flyer.color} waiting={flyer.waiting} onLanded={landed} />}
 
       {bloom && (
         <Bloom
@@ -472,15 +467,3 @@ function GearIcon({ size = 20 }) {
   )
 }
 
-// 메모 쓰고 발사
-function NoteSheet({ color, onClose, onShoot }) {
-  const [text, setText] = useState('')
-  return (
-    <Sheet title="Add a note" onClose={onClose}>
-      <form className="form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) onShoot(text.trim()) }}>
-        <input className="note-input" value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you do?" maxLength={60} autoFocus />
-        <button className="btn primary block" disabled={!text.trim()} style={{ background: color.me[1], borderColor: color.me[1] }}>shoot the grape ↑</button>
-      </form>
-    </Sheet>
-  )
-}

@@ -106,11 +106,11 @@ export default {
       .filter((c) => c.roomId === roomId && c.week === week)
       .map((c) => ({ ...c, mediaUrl: c.mediaUrl || media.get(c.id) || null })))),
 
-  async addCheckin(user, roomId, { week, goalId, blob, mediaType, note }) {
+  async addCheckin(user, roomId, { week, goalId, slot, blob, mediaType, note }) {
     const id = uid()
     if (blob) media.set(id, URL.createObjectURL(blob))
     await new Promise((r) => setTimeout(r, blob ? 400 : 0)) // 업로드 느낌
-    db.checkins.push({ id, roomId, uid: user.uid, week, goalId: goalId || null, createdAt: Date.now(), mediaType: blob ? mediaType : null, mediaUrl: null, note: note || '' })
+    db.checkins.push({ id, roomId, uid: user.uid, week, goalId: goalId || null, slot: Number.isInteger(slot) ? slot : null, createdAt: Date.now(), mediaType: blob ? mediaType : null, mediaUrl: null, note: note || '' })
     save()
   },
 

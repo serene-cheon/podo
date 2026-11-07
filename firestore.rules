@@ -55,7 +55,7 @@ service cloud.firestore {
         allow read: if signedIn() && isMember();
         allow create: if signedIn() && isMember()
           && request.resource.data.uid == me()
-          && request.resource.data.keys().hasOnly(['uid', 'week', 'goalId', 'createdAt', 'mediaType', 'mediaUrl', 'mediaPath', 'note'])
+          && request.resource.data.keys().hasOnly(['uid', 'week', 'goalId', 'slot', 'createdAt', 'mediaType', 'mediaUrl', 'mediaPath', 'note'])
           && request.resource.data.week is string
           && request.resource.data.createdAt == request.time
           && request.resource.data.note.size() <= 60;

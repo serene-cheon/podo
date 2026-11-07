@@ -8,6 +8,8 @@ const R = 20
 const DX = R * 2 + 4
 const DY = R * 1.8 + 2
 const TOP = 46
+export const SQ = 0.46 // 모던 포도알 모서리 둥글기 (반지름 대비)
+const GAP_M = 6 // 모던 포도알 사이 간격
 
 // 8알 이상: 5,4,3,2,1 처럼 한 줄씩 줄어드는 송이 모양
 function autoRows(n) {
@@ -26,18 +28,37 @@ const jitter = (i, k) => {
 
 function layout(target, clean) {
   const rows = LAYOUTS[target] || autoRows(Math.max(1, target))
+  const dx = clean ? R * 2 + GAP_M : DX
+  const dy = clean ? dx : DY
   const maxRow = Math.max(...rows)
-  const width = maxRow * DX
+  const width = maxRow * dx
   const pts = []
   rows.forEach((n, r) => {
-    const startX = (width - n * DX) / 2 + DX / 2
+    const startX = (width - n * dx) / 2 + dx / 2
     for (let i = 0; i < n; i++) {
       const k = pts.length
       const j = clean ? 0 : 1
-      pts.push({ x: startX + i * DX + jitter(k, 1) * 2.5 * j, y: TOP + r * DY + R + jitter(k, 2) * 2.5 * j, r: clean ? R : R + jitter(k, 3) * 1.6, rot: jitter(k, 4) * 40 * j })
+      pts.push({ x: startX + i * dx + jitter(k, 1) * 2.5 * j, y: TOP + r * dy + R + jitter(k, 2) * 2.5 * j, r: clean ? R : R + jitter(k, 3) * 1.6, rot: jitter(k, 4) * 40 * j })
     }
   })
-  return { pts, width, height: TOP + rows.length * DY + R / 2 + 6 }
+  return { pts, width, height: TOP + rows.length * dy + R / 2 + 6 }
+}
+
+// 체크인을 칸에 배치: slot 이 있으면 그 칸, 없으면(예전 기록) 남은 칸을 순서대로
+function placeInSlots(checkins, target, slotted) {
+  const slots = new Array(target).fill(null)
+  const rest = []
+  for (const c of checkins) {
+    const s = slotted && Number.isInteger(c.slot) ? c.slot : -1
+    if (s >= 0 && s < target && !slots[s]) slots[s] = c
+    else rest.push(c)
+  }
+  for (const c of rest) {
+    const k = slots.indexOf(null)
+    if (k < 0) break
+    slots[k] = c
+  }
+  return slots
 }
 
 import { GOAL_COLORS, colorOf } from '../lib/colors.js'
@@ -46,18 +67,21 @@ import { useTheme } from '../lib/theme.js'
 const INK = '#5A3A9E' // 줄기·빈 알 손그림 선
 
 /**
- * checkins: 시간순 체크인. 앞에서부터 포도알을 채웁니다.
+ * checkins: 시간순 체크인. slotted 면 각자 고른 칸(c.slot)에, 아니면 앞에서부터 채웁니다.
+ * dimFilled / hotSlot: 새 포도알을 끌어다 놓는 중 — 채워진 알은 흐리게, 손가락 아래 빈 칸은 하이라이트
  * canAdd: 다음 빈 포도알을 눌러 붙일 수 있는지
  * color: 골 색 번호 (GOAL_COLORS). colorOfCheckin(c) 를 주면 알마다 다른 색 (홈: 여러 골 섞기)
  * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 진하게 + "me", 친구 알은 연하게 + 이름 첫 글자
  * tint: 'other' 면 전부 연한 색 (친구 개별 송이)
  */
-export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin, apiRef }) {
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin, apiRef, slotted, dimFilled, hotSlot }) {
   const gid = useId().replace(/:/g, '')
   const modern = useTheme() === 'modern'
   const { pts, width, height } = layout(target, modern)
   if (maxWidth) size = Math.min(size, maxWidth / (width + 8))
-  const filled = Math.min(checkins.length, target)
+  const slots = placeInSlots(checkins, target, slotted)
+  const filled = slots.filter(Boolean).length
+  const nextIdx = slots.indexOf(null) // 다음 빈 칸 (+)
   const team = meUid !== undefined
   const cx = width / 2
 
@@ -107,12 +131,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
   const flyRefs = useRef([])
   const emptyRefs = useRef([])
   const mountedAt = useRef(performance.now())
-  const origin = () => (filled < target ? pts[filled] : { x: cx, y: TOP - 8 })
+  const origin = () => (nextIdx >= 0 ? pts[nextIdx] : { x: cx, y: TOP - 8 })
 
-  const burst = (from, to) => {
+  const burst = (idx) => {
     const o = origin()
-    const idx = []
-    for (let i = from; i < to; i++) idx.push(i)
     idx.sort((a, b) => Math.hypot(pts[a].x - o.x, pts[a].y - o.y) - Math.hypot(pts[b].x - o.x, pts[b].y - o.y))
     idx.forEach((i, n) => {
       const el = flyRefs.current[i]
@@ -130,13 +152,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         { transform: 'none' },
       ], { duration: 560, delay: 80 + n * 60, easing: 'cubic-bezier(.33,.72,.3,1)', fill: 'backwards' })
     })
-    emptyRefs.current.forEach((el, i) => el && i !== to && el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200 + idx.length * 40, fill: 'backwards' }))
+    emptyRefs.current.forEach((el, i) => el && i !== nextIdx && !slots[i] && el.animate?.([{ opacity: 0 }, { opacity: 1 }], { duration: 300, delay: 200 + idx.length * 40, fill: 'backwards' }))
   }
 
   const collapse = () => new Promise((resolve) => {
     const o = origin()
-    const idx = []
-    for (let i = 0; i < filled; i++) idx.push(i)
+    const idx = slots.map((c, i) => (c ? i : -1)).filter((i) => i >= 0)
     idx.sort((a, b) => Math.hypot(pts[b].x - o.x, pts[b].y - o.y) - Math.hypot(pts[a].x - o.x, pts[a].y - o.y))
     let end = 220
     idx.forEach((i, n) => {
@@ -150,31 +171,31 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         { transform: `translate(${o.x - pts[i].x}px, ${o.y - pts[i].y}px) scale(.1)`, opacity: 0 },
       ], { duration: 300, delay, easing: 'cubic-bezier(.55,0,.75,.45)', fill: 'forwards' })
     })
-    emptyRefs.current.forEach((el, i) => el && i !== filled && el.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }))
+    emptyRefs.current.forEach((el, i) => el && i !== nextIdx && !slots[i] && el.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }))
     setTimeout(resolve, end)
   })
 
-  // 다음 빈 칸의 화면 위치 (발사된 포도알이 날아갈 곳)
-  const nextRect = () => (filled < target ? emptyRefs.current[filled]?.getBoundingClientRect() : null)
-  useEffect(() => { if (apiRef) apiRef.current = { collapse, nextRect } })
+  // 빈 칸들의 화면 위치 (새 포도알을 끌어다 놓을 곳)
+  const emptySlots = () => slots.map((c, i) => (!c && emptyRefs.current[i] ? { i, rect: emptyRefs.current[i].getBoundingClientRect() } : null)).filter(Boolean)
+  useEffect(() => { if (apiRef) apiRef.current = { collapse, emptySlots } })
 
-  const prev = useRef(0)
+  // 새로 생긴 알: 처음 나타난 직후면 버스트, 아니면 그 칸에서 '뿅'
+  const seen = useRef(new Set())
   const [pops, setPops] = useState({})
+  const slotKey = slots.map((c) => c?.id || '').join('|')
   useEffect(() => {
-    if (filled > prev.current) {
-      const from = prev.current
-      prev.current = filled
-      // 화면에 처음 나타난 직후(데이터 도착 포함)면 버스트, 아니면 새 알 '뿅'
-      if (performance.now() - mountedAt.current < 1500) { burst(from, filled); return }
-      const p = {}
-      for (let i = from; i < filled; i++) p[i] = (i - from) * 70
-      setPops(p)
-      const t = setTimeout(() => setPops({}), 900 + filled * 70)
-      return () => clearTimeout(t)
-    }
-    prev.current = filled
+    const fresh = []
+    slots.forEach((c, i) => { if (c && !seen.current.has(c.id)) fresh.push(i) })
+    slots.forEach((c) => c && seen.current.add(c.id))
+    if (!fresh.length) return
+    if (performance.now() - mountedAt.current < 1500) { burst(fresh); return }
+    const p = {}
+    fresh.forEach((i, n) => { p[i] = n * 70 })
+    setPops(p)
+    const t = setTimeout(() => setPops({}), 900 + fresh.length * 70)
+    return () => clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filled])
+  }, [slotKey])
 
   // 채워진 포도알 그림 (누를 때 위에 올리는 복사본에도 사용)
   const drawFilled = (i, p, c, top) => {
@@ -182,22 +203,20 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
     const col = colorOf(ci)
     if (modern) {
-      // 모던: 단색 동그라미. 사진이 있으면 동그라미 안에 사진
+      // 모던: 살짝 둥근 사각형. 사진이 있으면 그 안에 사진
       const photo = c?.mediaType === 'photo' && c.mediaUrl
+      const rx = p.r * SQ
       return (
         <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
-          <circle r={p.r} fill={other ? col.friend[1] : col.me[1]} />
+          <rect x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={rx} fill={other ? col.friend[1] : col.me[1]} filter={`url(#sh${gid})`} />
           {photo && (
             <>
-              <clipPath id={`c${i}${gid}`}><circle r={p.r} /></clipPath>
+              <clipPath id={`c${i}${gid}`}><rect x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={rx} /></clipPath>
               <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
             </>
           )}
-          {/* 유리 버블처럼 반짝이는 하이라이트와 테두리 */}
-          <circle r={p.r} fill={`url(#gl${gid})`} />
-          <circle r={p.r - 0.7} fill="none" stroke="#fff" strokeOpacity=".5" strokeWidth="1.2" />
-          {/* 내 알은 얇은 링으로 구분 */}
-          {team && !other && <circle r={p.r + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
+          {/* 내 알은 얇은 테두리로 구분 */}
+          {team && !other && <rect x={-p.r - 2.4} y={-p.r - 2.4} width={p.r * 2 + 4.8} height={p.r * 2 + 4.8} rx={rx + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
           {!photo && team && (
             <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={other ? col.label : '#fff'}>
               {other ? [...(labelOf?.(c.uid) || '?')][0].toUpperCase() : 'ME'}
@@ -237,7 +256,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
 
   return (
     <svg
-      className={`cluster ${pressed !== null ? 'has-press' : ''}`}
+      className={`cluster ${pressed !== null ? 'has-press' : ''} ${dimFilled ? 'placing' : ''}`}
       viewBox={`-6 0 ${width + 12} ${height}`}
       width={(width + 12) * size}
       height={height * size}
@@ -253,6 +272,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           <stop offset=".85" stopColor="#000" stopOpacity="0" />
           <stop offset="1" stopColor="#000" stopOpacity=".14" />
         </radialGradient>
+        {/* 포도알 아래 부드러운 그림자 */}
+        <filter id={`sh${gid}`} x="-40%" y="-40%" width="180%" height="190%">
+          <feDropShadow dx="0" dy="2.2" stdDeviation="2.4" floodColor="#2A1F45" floodOpacity=".16" />
+        </filter>
         {/* 번진 가장자리 */}
         <filter id={`w${gid}`} x="-20%" y="-20%" width="140%" height="140%">
           <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="3" />
@@ -289,9 +312,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
 
       {pts.map((_, i) => i).map((i) => {
         const p = pts[i]
-        const c = checkins[i]
-        const isFilled = i < filled
-        const isNext = !isFilled && i === filled && canAdd
+        const c = slots[i]
+        const isFilled = !!c
+        const isNext = !isFilled && i === nextIdx && canAdd
+        const isHot = !isFilled && i === hotSlot
         const pressable = isFilled && onPressStart
         // 키보드(Enter)로 누르면 바로 펼침
         const handle = pressable
@@ -309,7 +333,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             transform={`translate(${p.x} ${p.y})`}
             onClick={handle}
             {...press}
-            className={`grape ${isFilled ? 'on' : 'off'} ${isNext ? 'next' : ''} ${handle ? 'tap' : ''} ${pressed === i || (c && c.id === hiddenId) ? 'press-src' : ''}`}
+            className={`grape ${isFilled ? 'on' : 'off'} ${isNext ? 'next' : ''} ${isHot ? 'hot' : ''} ${handle ? 'tap' : ''} ${pressed === i || (c && c.id === hiddenId) ? 'press-src' : ''}`}
             role={handle ? 'button' : undefined}
             aria-label={isNext ? 'Add a grape' : undefined}
           >
@@ -317,19 +341,23 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
               <g ref={(el) => { flyRefs.current[i] = el }}><g className="press-wrap">{drawFilled(i, p, c, false)}</g></g>
             ) : (
               <g ref={(el) => { emptyRefs.current[i] = el }}>{modern ? (
-                <g>
-                  <circle r={p.r - 1} fill={isNext ? '#fff' : 'none'} stroke={isNext ? '#17151C' : '#E3E0E8'} strokeWidth={isNext ? 1.5 : 1.2} />
-                  {isNext && <path d="M-5.5 0 H5.5 M0 -5.5 V5.5" stroke="#17151C" strokeWidth="1.6" strokeLinecap="round" />}
+                <g className="slot">
+                  <rect
+                    x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={p.r * SQ}
+                    fill={isHot ? colorOf(color).friend[0] : '#ECEBEF'}
+                    stroke={isHot ? colorOf(color).me[1] : 'none'} strokeWidth="2"
+                  />
+                  {isNext && !isHot && <path d="M-5.5 0 H5.5 M0 -5.5 V5.5" stroke="#9A97A3" strokeWidth="1.5" strokeLinecap="round" />}
                 </g>
               ) : (
               <g filter={`url(#h${gid})`}>
                 <circle
                   r={p.r - 1.5}
-                  fill={isNext ? '#fff' : 'none'}
-                  stroke={isNext ? colorOf(color).ink : INK}
+                  fill={isHot ? colorOf(color).friend[0] : isNext ? '#fff' : 'none'}
+                  stroke={isHot || isNext ? colorOf(color).ink : INK}
                   strokeWidth={isNext ? 1.8 : 1.2}
-                  strokeDasharray={isNext ? 'none' : '3 4'}
-                  opacity={isNext ? 1 : 0.4}
+                  strokeDasharray={isNext || isHot ? 'none' : '3 4'}
+                  opacity={isNext || isHot ? 1 : 0.4}
                 />
                 {isNext && <path d="M-6 0 H6 M0 -6 V6" stroke={colorOf(color).ink} strokeWidth="2" strokeLinecap="round" />}
               </g>
