@@ -26,8 +26,9 @@ function boxes(rect, tall, square) {
     y: Math.min(Math.max(cy - s / 2, 10), vh - s - 10),
     w: s, h: s, r: Math.round(s * 0.2), // 덜 각지게 (~29px)
   }
-  const w = Math.min(vw - 24, 440)
-  const h = tall ? Math.min(vh - 130, w * 1.3) : Math.min(w, vh - 130)
+  // 펼친 카드는 사진이든 메모든 항상 정사각형
+  const w = Math.min(vw - 24, 440, vh - 130)
+  const h = w
   const open = { x: (vw - w) / 2, y: Math.max(14, (vh - h) / 2 - 28), w, h, r: 30 }
   return { grape, press, open }
 }

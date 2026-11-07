@@ -307,7 +307,7 @@ button.member:active { background: var(--grape-soft); }
 .bloom-el { position: fixed; overflow: hidden; box-shadow: 0 10px 30px rgba(40,20,70,.18); will-change: left, top, width, height, border-radius; pointer-events: auto; transform: translateZ(0); }
 .bloom-press .bloom-el { pointer-events: none; box-shadow: 0 14px 34px rgba(40,20,70,.28); }
 .bloom-grape .bloom-el { box-shadow: none; }
-.bloom-el img, .bloom-el video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
+.bloom-el > img, .bloom-el > video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; }
 .bloom-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; margin: 0; padding: 14%; font-weight: 500; letter-spacing: -.02em; color: var(--ink); font-size: 13px; line-height: 1.2; transition: font-size .52s cubic-bezier(.32,.72,0,1), padding .52s cubic-bezier(.32,.72,0,1); overflow: hidden; }
 .bloom-grape .bloom-note { opacity: 0; transition: opacity .15s; }
 .bloom-open .bloom-note { font-size: 28px; padding: 12% 10% 26%; }
@@ -436,3 +436,5 @@ button.member:active { background: var(--grape-soft); }
 /* 송이는 화면 폭을 조금 더 써서 68px 포도알 5칸이 들어가게 */
 .room .team-bunch { margin-left: -10px; margin-right: -10px; }
 .room .team-bunch .my-bunch-head { padding: 0 10px; }
+.bloom-info .pv-meta .avatar { width: 30px; height: 30px; position: static; }
+.bloom-info .pv-meta > div { min-width: 0; gap: 1px; line-height: 1.25; }
