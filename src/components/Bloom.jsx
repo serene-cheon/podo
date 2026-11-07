@@ -77,8 +77,8 @@ export default function Bloom({ item, phase, member, goal, canRemove, onRemove, 
   const wash = isMine ? color?.me : color?.friend
   // 포도알과 같은 유리판 질감: 대각선 바탕 + 반투명 흰 막 + 안쪽 서리 빛 테두리
   const [hi, lo] = wash || ['#E6DDF5', '#C9B5EE']
-  const bg = `linear-gradient(rgba(255,255,255,${isMine ? '.12' : '.22'}), rgba(255,255,255,${isMine ? '.12' : '.22'})), linear-gradient(135deg, ${hi}, ${lo} 55%, ${lo})`
-  const aura = `inset 0 0 0 1px rgba(255,255,255,.45), inset 0 0 22px rgba(255,255,255,.32), 0 14px 36px ${(color?.me?.[1] || '#7F5FCF')}${isMine ? '4D' : '2E'}`
+  const bg = `linear-gradient(rgba(255,255,255,${isMine ? '.06' : '.16'}), rgba(255,255,255,${isMine ? '.06' : '.16'})), linear-gradient(135deg, ${hi}, ${lo} 40%, ${lo})`
+  const aura = `inset 0 0 0 1px rgba(255,255,255,.25), inset 0 0 18px rgba(255,255,255,.16), 0 12px 32px ${(color?.me?.[1] || '#7F5FCF')}${isMine ? '2E' : '1C'}`
 
   return (
     <div className={`bloom bloom-${shown}`} onClick={target === 'open' ? onClose : undefined}>
