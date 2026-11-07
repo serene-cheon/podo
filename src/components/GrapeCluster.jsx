@@ -242,10 +242,11 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           <clipPath id={`c${i}${gid}`}><rect {...box} /></clipPath>
           <g clipPath={`url(#c${i}${gid})`}>
             {photo ? (
-              <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" />
+              <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" opacity=".94" />
             ) : (
               <>
-                <rect {...box} fill={`url(#bd${w}${ci}${gid})`} />
+                {/* 아주 살짝 비치는 유리판 */}
+                <rect {...box} fill={`url(#bd${w}${ci}${gid})`} fillOpacity={other ? 0.72 : 0.86} />
                 {/* 반투명 흰 막 */}
                 <rect {...box} fill="#fff" opacity={other ? 0.16 : 0.06} />
               </>

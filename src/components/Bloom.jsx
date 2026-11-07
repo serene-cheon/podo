@@ -77,13 +77,14 @@ export default function Bloom({ item, phase, member, goal, canRemove, onRemove, 
   const wash = isMine ? color?.me : color?.friend
   // 포도알과 같은 유리판 질감: 대각선 바탕 + 반투명 흰 막 + 안쪽 서리 빛 테두리
   const [hi, lo] = wash || ['#E6DDF5', '#C9B5EE']
-  const bg = `linear-gradient(rgba(255,255,255,${isMine ? '.06' : '.16'}), rgba(255,255,255,${isMine ? '.06' : '.16'})), linear-gradient(135deg, ${hi}, ${lo} 40%, ${lo})`
+  const a = isMine ? 'DB' : 'B8' // 아주 살짝 비치게 (뒤는 흐릿하게 블러)
+  const bg = `linear-gradient(rgba(255,255,255,${isMine ? '.06' : '.16'}), rgba(255,255,255,${isMine ? '.06' : '.16'})), linear-gradient(135deg, ${hi}${a}, ${lo}${a} 40%, ${lo}${a})`
   const aura = `inset 0 0 0 1px rgba(255,255,255,.25), inset 0 0 18px rgba(255,255,255,.16), 0 12px 32px ${(color?.me?.[1] || '#7F5FCF')}${isMine ? '2E' : '1C'}`
 
   return (
     <div className={`bloom bloom-${shown}`} onClick={target === 'open' ? onClose : undefined}>
       <div className="bloom-back" />
-      <div ref={elRef} className="bloom-el" style={{ background: bg, boxShadow: aura, ...css(B.grape) }} onClick={(e) => e.stopPropagation()}>
+      <div ref={elRef} className={`bloom-el ${hasMedia ? 'media' : ''}`} style={{ background: bg, boxShadow: aura, ...css(B.grape) }} onClick={(e) => e.stopPropagation()}>
         {hasMedia && (c.mediaType === 'video'
           ? <video src={c.mediaUrl} autoPlay loop playsInline muted />
           : <img src={c.mediaUrl} alt="" draggable={false} />)}

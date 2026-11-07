@@ -438,3 +438,5 @@ button.member:active { background: var(--grape-soft); }
 .room .team-bunch .my-bunch-head { padding: 0 10px; }
 .bloom-info .pv-meta .avatar { width: 30px; height: 30px; position: static; }
 .bloom-info .pv-meta > div { min-width: 0; gap: 1px; line-height: 1.25; }
+.bloom-el { -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3); }
+.bloom-el.media { -webkit-backdrop-filter: none; backdrop-filter: none; }
