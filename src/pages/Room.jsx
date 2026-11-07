@@ -231,8 +231,12 @@ export default function Room({ api, user, id }) {
             </button>
           ))}
         </nav>
-      ) : (
-        <p className="goal-line"><span className="mono muted">goal</span> {goal.title}</p>
+      ) : !isPersonal(goal) && (
+        <button className="my-goal our" onClick={() => isHostOf(room, user.uid) && setSettingsOpen(true)} disabled={!isHostOf(room, user.uid)}>
+          <span className="mono muted">our goal</span>
+          <b>{goal.title}</b>
+          {isHostOf(room, user.uid) && <span className="my-goal-edit" aria-hidden>edit</span>}
+        </button>
       )}
 
       {isPersonal(goal) && (

@@ -488,3 +488,5 @@ button.member:active { background: var(--grape-soft); }
 .my-goal-edit { font-size: 13px; color: var(--muted); }
 .member-name { display: flex; flex-direction: column; }
 .member .member-goal { text-align: left; min-width: 0; font-family: var(--sans); font-size: 12px; color: var(--muted); font-weight: 400; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.my-goal:disabled { opacity: 1; cursor: default; }
+.my-goal .mono { min-width: 64px; }
