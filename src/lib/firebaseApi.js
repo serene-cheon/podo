@@ -60,7 +60,7 @@ export function createFirebaseApi(config) {
       if (name) await updateProfile(auth.currentUser, { displayName: name }).catch(() => {})
       const snap = await getDocs(query(collection(db, 'rooms'), where('memberIds', 'array-contains', user.uid)))
       const batch = writeBatch(db)
-      snap.docs.forEach((d) => batch.update(d.ref, { [`members.${user.uid}`]: { name: next.name, photo: next.photo || null } }))
+      snap.docs.forEach((d) => batch.update(d.ref, { [`members.${user.uid}.name`]: next.name, [`members.${user.uid}.photo`]: next.photo || null }))
       await batch.commit()
       profile = next
       const u = toUser(auth.currentUser, profile)
@@ -124,6 +124,10 @@ export function createFirebaseApi(config) {
         if (created) return id
       }
       throw new Error("Couldn't create a room code. Please try again.")
+    },
+
+    async setMyGoal(user, roomId, goalId, mine) {
+      await updateDoc(doc(db, 'rooms', roomId), { [`members.${user.uid}.goals.${goalId}`]: mine })
     },
 
     async joinRoom(user, id) {

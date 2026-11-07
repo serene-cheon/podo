@@ -10,7 +10,7 @@ import { SproutDoodle } from '../components/Doodle.jsx'
 import GoalsEditor from '../components/GoalsEditor.jsx'
 import GrapeLoader from '../components/GrapeLoader.jsx'
 import Bloom from '../components/Bloom.jsx'
-import { goalsOf, goalIdOf, cleanGoals, newGoalId } from '../lib/goals.js'
+import { goalsOf, goalIdOf, cleanGoals, newGoalId, targetFor } from '../lib/goals.js'
 import { avatarToDataUrl } from '../lib/inlinePhoto.js'
 
 export default function Home({ api, user }) {
@@ -45,7 +45,7 @@ export default function Home({ api, user }) {
             <div className="room-info">
               <b>{r.name}</b>
               <span className="mono muted">
-                {goalsOf(r).length > 1 ? goalsOf(r).map((g) => g.title).join(' · ') : `${goalsOf(r)[0].title} · ${goalsOf(r)[0].target}×/week`}
+                {goalsOf(r).map((g) => g.title).join(' · ')}
               </span>
             </div>
             <div className="stack">
@@ -86,13 +86,13 @@ function MyBunch({ api, user, rooms }) {
   const mineOf = ({ room, goal }) => (mineByRoom[room.id] || [])
     .filter((c) => goalIdOf(c, goalsOf(room)) === goal.id)
     .sort((a, b) => a.createdAt - b.createdAt)
-    .slice(0, goal.target)
-  const total = allGoals.reduce((s, x) => s + x.goal.target, 0)
+    .slice(0, targetFor(room, goal, user.uid))
+  const total = allGoals.reduce((s, x) => s + targetFor(x.room, x.goal, user.uid), 0)
   const colorById = {}
   const filled = allGoals
     .flatMap((x) => mineOf(x).map((c) => { colorById[c.id] = x.goal.color; return c }))
     .sort((a, b) => a.createdAt - b.createdAt)
-  const doneGoals = allGoals.filter((x) => mineOf(x).length >= x.goal.target).length
+  const doneGoals = allGoals.filter((x) => mineOf(x).length >= targetFor(x.room, x.goal, user.uid)).length
   const left = daysLeft(week)
   const complete = total > 0 && filled.length >= total
   // 누르면 커지고, 떼면 펼쳐지는 포도알 (방 화면과 같은 인터랙션)

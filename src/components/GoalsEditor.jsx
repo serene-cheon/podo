@@ -13,7 +13,7 @@ export default function GoalsEditor({ goals, onChange, disabled }) {
             <input
               value={g.title}
               onChange={(e) => set(i, { title: e.target.value })}
-              placeholder={i === 0 ? 'e.g. Work out 30 min' : 'e.g. Read 20 pages'}
+              placeholder={g.mode === 'personal' ? 'e.g. Workout (any kind)' : i === 0 ? 'e.g. Work out 30 min' : 'e.g. Read 20 pages'}
               maxLength={40}
               required={i === 0}
               disabled={disabled}
@@ -23,6 +23,12 @@ export default function GoalsEditor({ goals, onChange, disabled }) {
               <button type="button" className="icon-btn goal-remove" onClick={() => onChange(goals.filter((_, k) => k !== i))} aria-label="Remove goal">×</button>
             )}
           </div>
+          <div className="seg goal-mode" role="group" aria-label="Goal type">
+            {[['team', 'team goal'], ['personal', 'each sets their own']].map(([m, label]) => (
+              <button type="button" key={m} className={(g.mode || 'team') === m ? 'on' : ''} onClick={() => set(i, { mode: m })} disabled={disabled}>{label}</button>
+            ))}
+          </div>
+          {g.mode === 'personal' && <p className="mono muted small goal-mode-hint">members pick their own goal and times a week. this is the default.</p>}
           <div className="chips small" role="group" aria-label="Times a week">
             {[1, 2, 3, 4, 5, 6, 7].map((n) => (
               <button type="button" key={n} className={n === g.target ? 'on' : ''} onClick={() => set(i, { target: n })} disabled={disabled}>{n}</button>
@@ -32,7 +38,7 @@ export default function GoalsEditor({ goals, onChange, disabled }) {
         </div>
       ))}
       {!disabled && goals.length < MAX_GOALS && (
-        <button type="button" className="link-mono add-goal" onClick={() => onChange([...goals, { id: newGoalId(), title: '', target: 3, color: nextColor(goals) }])}>
+        <button type="button" className="link-mono add-goal" onClick={() => onChange([...goals, { id: newGoalId(), title: '', target: 3, color: nextColor(goals), mode: 'team' }])}>
           + add another goal
         </button>
       )}

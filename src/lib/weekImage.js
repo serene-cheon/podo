@@ -63,7 +63,7 @@ export async function makeWeekImage(o) {
   ctx.fillText(fitText(ctx, o.roomName, W - 144), 72, 250)
   ctx.fillStyle = C.muted
   ctx.font = `400 36px ${SANS}`
-  ctx.fillText(fitText(ctx, `${o.goal} · ${o.target}×/week`, W - 144), 72, 310)
+  ctx.fillText(fitText(ctx, o.goal, W - 144), 72, 310)
 
   // 포도송이 카드
   const cardY = 360
@@ -110,9 +110,10 @@ export async function makeWeekImage(o) {
     ctx.fillText(fitText(ctx, m.name + (m.isMe ? ' (me)' : ''), 520), 72, y)
     const dot = 16
     const gap = 10
-    const dotsW = o.target * dot + (o.target - 1) * gap
+    const mt = m.target ?? o.target
+    const dotsW = mt * dot + (mt - 1) * gap
     let dx = W - 72 - 90 - dotsW
-    for (let i = 0; i < o.target; i++) {
+    for (let i = 0; i < mt; i++) {
       ctx.fillStyle = i < m.n ? (m.isMe ? (o.colors?.me || C.grape2) : (o.colors?.friend || C.pink)) : C.line
       ctx.beginPath()
       ctx.arc(dx + dot / 2, y - 11, dot / 2, 0, Math.PI * 2)
@@ -121,7 +122,7 @@ export async function makeWeekImage(o) {
     }
     ctx.fillStyle = C.muted
     ctx.textAlign = 'right'
-    ctx.fillText(`${m.n}/${o.target}`, W - 72, y)
+    ctx.fillText(`${m.n}/${mt}`, W - 72, y)
     ctx.textAlign = 'left'
     y += rowH
   }

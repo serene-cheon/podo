@@ -66,7 +66,7 @@ export default {
     const next = { name: name ?? db.user.name, photo: photo === undefined ? db.user.photo : photo }
     db.user = { ...db.user, ...next }
     for (const r of Object.values(db.rooms)) {
-      if (r.members[user.uid]) db.rooms[r.id] = { ...r, members: { ...r.members, [user.uid]: { name: next.name, photo: next.photo || null } } }
+      if (r.members[user.uid]) db.rooms[r.id] = { ...r, members: { ...r.members, [user.uid]: { ...r.members[user.uid], name: next.name, photo: next.photo || null } } }
     }
     save()
   },
@@ -92,6 +92,13 @@ export default {
     seedFriends(room) // 데모용 친구 2명을 자동으로 초대
     save()
     return id
+  },
+
+  async setMyGoal(user, roomId, goalId, mine) {
+    const r = db.rooms[roomId]
+    const m = r.members[user.uid] || {}
+    db.rooms[roomId] = { ...r, members: { ...r.members, [user.uid]: { ...m, goals: { ...(m.goals || {}), [goalId]: mine } } } }
+    save()
   },
 
   async joinRoom(user, id) {

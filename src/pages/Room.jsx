@@ -11,7 +11,7 @@ import { toast } from '../components/Toast.jsx'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import { makeWeekImage, saveImage } from '../lib/weekImage.js'
 import { weekKey, shiftWeek, weekLabel, daysLeft } from '../lib/week.js'
-import { goalsOf, goalIdOf, cleanGoals, goalFields, hostsOf, isHostOf } from '../lib/goals.js'
+import { goalsOf, goalIdOf, cleanGoals, goalFields, hostsOf, isHostOf, isPersonal, myGoalOf, targetFor, titleFor } from '../lib/goals.js'
 import GoalsEditor from '../components/GoalsEditor.jsx'
 import { colorOf } from '../lib/colors.js'
 
@@ -32,6 +32,7 @@ export default function Room({ api, user, id }) {
   const openFrom = (c, rect, colorIdx) => setBloom({ c, rect, color: colorOf(colorIdx), isMine: c.uid === user.uid, phase: 'open' })
   const [party, setParty] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [myGoalOpen, setMyGoalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const bunchRef = useRef(null)
   const [goalPick, setGoalPick] = useState(null)
@@ -75,7 +76,8 @@ export default function Room({ api, user, id }) {
     const dy = e.clientY - s0.y
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(goalIdx + (dx < 0 ? 1 : -1))
   }
-  const target = goal.target
+  const tOf = (uid, g = goal) => targetFor(room, g, uid) // 멤버별 주 횟수 (개인 골이면 각자)
+  const target = tOf(user.uid) // 내 횟수
   const members = useMemo(() => {
     if (!room) return []
     const ids = [user.uid, ...room.memberIds.filter((m) => m !== user.uid)].filter((m) => room.memberIds.includes(m))
@@ -94,10 +96,11 @@ export default function Room({ api, user, id }) {
     return m
   }, [data, week, goals])
   const byUser = byGoal[goal.id] || {}
-  const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, g.target)
+  const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, tOf(user.uid, g))
 
-  const total = target * members.length
-  const done = members.reduce((s, m) => s + Math.min(byUser[m.uid]?.length || 0, target), 0)
+  const total = members.reduce((s, m) => s + tOf(m.uid), 0)
+  const done = members.reduce((s, m) => s + Math.min(byUser[m.uid]?.length || 0, tOf(m.uid)), 0)
+  const myDone = Math.min(byUser[user.uid]?.length || 0, target)
   const mine = byUser[user.uid] || []
   const isCurrent = week === thisWeek
   const moments = (data.week === week ? data.list : []).filter((c) => c.mediaType && goalIdOf(c, goals)).sort((a, b) => b.createdAt - a.createdAt)
@@ -122,7 +125,7 @@ export default function Room({ api, user, id }) {
     try {
       await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, slot, blob, mediaType, note: (n || '').trim() })
       vibrate(20)
-      if (mine.length + 1 === target) toast(`You finished “${goal.title}” this week 🍇`)
+      if (mine.length + 1 === target) toast(`You finished “${titleFor(room, goal, user.uid)}” this week 🍇`)
     } catch (e) {
       toast('Could not add: ' + (e.message || e))
     } finally {
@@ -175,7 +178,7 @@ export default function Room({ api, user, id }) {
         weekLabel: weekLabel(week).toLowerCase(),
         done,
         total,
-        members: members.map((m) => ({ name: m.name, n: Math.min(byUser[m.uid]?.length || 0, target), isMe: m.uid === user.uid })),
+        members: members.map((m) => ({ name: m.name, n: Math.min(byUser[m.uid]?.length || 0, tOf(m.uid)), target: tOf(m.uid), isMe: m.uid === user.uid })),
         colors: { me: gc.me[1], friend: gc.friend[1], ink: gc.ink },
       })
       const slug = (t) => t.replace(/[^\w가-힣-]+/g, '-')
@@ -209,7 +212,7 @@ export default function Room({ api, user, id }) {
   const memberOf = (uid) => room.members[uid]
   // 팀 송이: 각자 목표 개수까지만, 붙인 시간순으로 채움
   const teamFilled = members
-    .flatMap((m) => (byUser[m.uid] || []).slice(0, target))
+    .flatMap((m) => (byUser[m.uid] || []).slice(0, tOf(m.uid)))
     .sort((a, b) => a.createdAt - b.createdAt)
 
   return (
@@ -229,7 +232,15 @@ export default function Room({ api, user, id }) {
           ))}
         </nav>
       ) : (
-        <p className="goal-line"><span className="mono muted">goal</span> {goal.title} <span className="mono muted">· {target}×/week</span></p>
+        <p className="goal-line"><span className="mono muted">goal</span> {goal.title}</p>
+      )}
+
+      {isPersonal(goal) && (
+        <button className={`my-goal ${myGoalOf(room, goal, user.uid) ? '' : 'unset'}`} onClick={() => setMyGoalOpen(true)}>
+          <span className="mono muted">my goal</span>
+          <b>{myGoalOf(room, goal, user.uid) ? titleFor(room, goal, user.uid) : 'set your own goal'}</b>
+          <span className="my-goal-edit" aria-hidden>edit</span>
+        </button>
       )}
 
       <nav className="week-nav">
@@ -251,7 +262,10 @@ export default function Room({ api, user, id }) {
             <h2>{done >= total ? 'Team podo is complete!' : 'Team podo'}</h2>
             {goals.length > 1 && <p className="mono" style={{ color: gc.ink }}>{goal.title}</p>}
           </div>
-          <p className="big-count small"><b>{done}</b><span>/{total}</span></p>
+          <div className="counts">
+            <span><small>team</small><b>{done}</b>/{total}</span>
+            <span className="me"><small>me</small><b>{myDone}</b>/{target}</span>
+          </div>
         </div>
         <div key={goal.id}>
         <GrapeCluster
@@ -289,15 +303,19 @@ export default function Room({ api, user, id }) {
       <h2 className="label-mono">members</h2>
       <section className="members">
         {members.map((m) => {
-          const n = Math.min(byUser[m.uid]?.length || 0, target)
+          const t = tOf(m.uid)
+          const n = Math.min(byUser[m.uid]?.length || 0, t)
           return (
-            <button key={m.uid} className={`member ${m.uid === user.uid ? 'is-me' : ''} ${n >= target ? 'done' : ''}`} onClick={() => setPersonUid(m.uid)}>
+            <button key={m.uid} className={`member ${m.uid === user.uid ? 'is-me' : ''} ${n >= t ? 'done' : ''}`} onClick={() => setPersonUid(m.uid)}>
               <Avatar {...m} size={24} />
-              <span className="member-name">{m.uid === user.uid ? 'You' : m.name}</span>
-              <span className="member-dots">
-                {Array.from({ length: target }, (_, i) => <i key={i} style={i < n ? { background: m.uid === user.uid ? gc.me[1] : gc.friend[1] } : undefined} />)}
+              <span className="member-name">
+                {m.uid === user.uid ? 'You' : m.name}
+                {isPersonal(goal) && <small className="member-goal">{myGoalOf(room, goal, m.uid) ? titleFor(room, goal, m.uid) : 'no goal yet'}</small>}
               </span>
-              <small>{n}/{target}</small>
+              <span className="member-dots">
+                {Array.from({ length: t }, (_, i) => <i key={i} style={i < n ? { background: m.uid === user.uid ? gc.me[1] : gc.friend[1] } : undefined} />)}
+              </span>
+              <small>{n}/{t}</small>
             </button>
           )
         })}
@@ -333,18 +351,30 @@ export default function Room({ api, user, id }) {
             <div className="person-bunches">
               {goals.map((g) => {
                 const list = byGoal[g.id]?.[personUid] || []
-                const n = Math.min(list.length, g.target)
+                const gt = tOf(personUid, g)
+                const n = Math.min(list.length, gt)
                 return (
-                  <div key={g.id} className={`person-bunch ${n >= g.target ? 'done' : ''}`}>
-                    <GrapeCluster target={g.target} checkins={list} color={g.color} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onPressStart={pressStart} onPressEnd={pressEnd} hiddenId={bloom?.c.id} />
-                    <b>{g.title}</b>
-                    <small className="mono muted">{n}/{g.target}{n >= g.target ? ' · done' : ''}</small>
+                  <div key={g.id} className={`person-bunch ${n >= gt ? 'done' : ''}`}>
+                    <GrapeCluster target={gt} checkins={list} color={g.color} tint={personUid === user.uid ? 'me' : 'other'} size={goals.length > 1 ? 0.9 : 1.3} maxWidth={goals.length > 1 ? 150 : 240} onPressStart={pressStart} onPressEnd={pressEnd} hiddenId={bloom?.c.id} />
+                    <b>{titleFor(room, g, personUid)}</b>
+                    <small className="mono muted">{n}/{gt}{n >= gt ? ' · done' : ''}</small>
                   </div>
                 )
               })}
             </div>
           </div>
         </Sheet>
+      )}
+
+      {myGoalOpen && (
+        <MyGoalSheet
+          goal={goal}
+          mine={myGoalOf(room, goal, user.uid)}
+          onClose={() => setMyGoalOpen(false)}
+          onSave={async (v) => {
+            try { await api.setMyGoal(user, id, goal.id, v); setMyGoalOpen(false); toast('Your goal is set') } catch (e) { toast('Could not save: ' + (e.message || e)) }
+          }}
+        />
       )}
 
       {settingsOpen && (
@@ -377,7 +407,7 @@ export default function Room({ api, user, id }) {
         />
       )}
 
-      {isCurrent && mine.length < target && !placing && !noteOpen && !bloom && !camera && !settingsOpen && !personUid && (
+      {isCurrent && mine.length < target && !placing && !noteOpen && !myGoalOpen && !bloom && !camera && !settingsOpen && !personUid && (
         <SnapBar open={snapOpen} setOpen={setSnapOpen} onPhoto={() => setCamera('photo')} onNote={() => setNoteOpen(true)} buttonRef={snapRef} />
       )}
 
@@ -494,6 +524,30 @@ function NoteSheet({ onClose, onDone }) {
       <form className="form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) onDone(text.trim()) }}>
         <input className="note-input" value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you do today?" maxLength={60} autoFocus />
         <button className="btn primary block" disabled={!text.trim()}>make it a grape</button>
+      </form>
+    </Sheet>
+  )
+}
+
+// 개인 골: 내 목표와 주 횟수
+function MyGoalSheet({ goal, mine, onClose, onSave }) {
+  const [title, setTitle] = useState(mine?.title || '')
+  const [target, setTarget] = useState(mine?.target || goal.target)
+  const [busy, setBusy] = useState(false)
+  return (
+    <Sheet title="My goal" onClose={onClose}>
+      <form className="form" onSubmit={async (e) => { e.preventDefault(); if (!title.trim()) return; setBusy(true); await onSave({ title: title.trim(), target }); setBusy(false) }}>
+        <p className="mono muted small">for “{goal.title}” · everyone sets their own</p>
+        <label>my goal
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Run 5km" maxLength={40} required autoFocus />
+        </label>
+        <div className="label">times a week</div>
+        <div className="chips">
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+            <button type="button" key={n} className={n === target ? 'on' : ''} onClick={() => setTarget(n)}>{n}</button>
+          ))}
+        </div>
+        <button className="btn primary block" disabled={busy || !title.trim()}>{busy ? 'saving…' : 'save'}</button>
       </form>
     </Sheet>
   )

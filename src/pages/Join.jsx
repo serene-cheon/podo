@@ -36,7 +36,7 @@ export default function Join({ api, user, id }) {
           <h1>{room.name}</h1>
           <div className="goal-list">
             {goalsOf(room).map((g) => (
-              <p key={g.id} className="goal-line"><span className="mono muted">goal</span> {g.title} <span className="mono muted">· {g.target}×/week</span></p>
+              <p key={g.id} className="goal-line"><span className="mono muted">goal</span> {g.title}</p>
             ))}
           </div>
           <div className="stack big">
