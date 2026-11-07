@@ -130,21 +130,27 @@ export default function Room({ api, user, id }) {
     }
   }
 
-  function snapNow() { setCamera('photo') }
-  function snapLater() { toast('Snap Later is coming soon') }
+  // + → Photo: 사진 찍기 / Note: 한 줄 쓰기 → 그게 포도알이 되어 떠 있고, 빈 칸으로 끌어다 놓기
+  const [noteOpen, setNoteOpen] = useState(false)
+  const fromPlus = () => snapRef.current?.getBoundingClientRect()
   function photoTaken({ blob }) {
     setCamera(null)
-    setPlacing({ blob, url: URL.createObjectURL(blob), from: snapRef.current?.getBoundingClientRect() })
+    setPlacing({ blob, url: URL.createObjectURL(blob), from: fromPlus() })
+  }
+  function noteWritten(text) {
+    setNoteOpen(false)
+    setPlacing({ note: text, from: fromPlus() })
   }
   async function placeAt(slot) {
     const p = placing
-    await add({ blob: p.blob, mediaType: 'photo', slot })
-    URL.revokeObjectURL(p.url)
+    if (p.blob) await add({ blob: p.blob, mediaType: 'photo', note: '', slot })
+    else await add({ note: p.note, slot })
+    if (p.url) URL.revokeObjectURL(p.url)
     setPlacing(null)
     setHot(null)
   }
   function discard() {
-    if (placing) URL.revokeObjectURL(placing.url)
+    if (placing?.url) URL.revokeObjectURL(placing.url)
     setPlacing(null)
     setHot(null)
   }
@@ -356,9 +362,12 @@ export default function Room({ api, user, id }) {
 
       {camera && <Camera initialMode="photo" photoOnly onClose={() => setCamera(null)} onDone={photoTaken} />}
 
+      {noteOpen && <NoteSheet onClose={() => setNoteOpen(false)} onDone={noteWritten} />}
+
       {placing && (
         <PlaceGrape
           url={placing.url}
+          note={placing.note}
           color={gc}
           from={placing.from}
           getSlots={() => bunchApi.current?.emptySlots?.() || []}
@@ -368,8 +377,8 @@ export default function Room({ api, user, id }) {
         />
       )}
 
-      {isCurrent && mine.length < target && !placing && !bloom && !camera && !settingsOpen && !personUid && (
-        <SnapBar open={snapOpen} setOpen={setSnapOpen} onSnapNow={snapNow} onSnapLater={snapLater} buttonRef={snapRef} />
+      {isCurrent && mine.length < target && !placing && !noteOpen && !bloom && !camera && !settingsOpen && !personUid && (
+        <SnapBar open={snapOpen} setOpen={setSnapOpen} onPhoto={() => setCamera('photo')} onNote={() => setNoteOpen(true)} buttonRef={snapRef} />
       )}
 
       {bloom && (
@@ -476,3 +485,16 @@ function GearIcon({ size = 20 }) {
   )
 }
 
+
+// 메모 한 줄 쓰기 → 포도알로
+function NoteSheet({ onClose, onDone }) {
+  const [text, setText] = useState('')
+  return (
+    <Sheet title="Note" onClose={onClose}>
+      <form className="form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) onDone(text.trim()) }}>
+        <input className="note-input" value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you do today?" maxLength={60} autoFocus />
+        <button className="btn primary block" disabled={!text.trim()}>make it a grape</button>
+      </form>
+    </Sheet>
+  )
+}

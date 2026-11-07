@@ -468,3 +468,5 @@ button.member:active { background: var(--grape-soft); }
 .host-chip:not(.on):disabled { opacity: .55; }
 .grape .fly { transform-box: fill-box; transform-origin: center; }
 @keyframes popin { from { transform: scale(.85); opacity: 0; } to { transform: none; opacity: 1; } }
+.place-note { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; font-size: 10px; line-height: 1.2; font-weight: 500; color: #fff; overflow: hidden; word-break: keep-all; }
+.place-grape { display: block; }

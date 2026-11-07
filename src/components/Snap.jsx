@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { SQ, GRAPE_PX } from './GrapeCluster.jsx'
 
-// 하단 + 버튼: 누르면 Snap Now / Snap Later 두 버튼이 떠요.
-export function SnapBar({ open, setOpen, onSnapNow, onSnapLater, buttonRef }) {
+// 하단 + 버튼: 누르면 Photo / Note 두 버튼이 떠요.
+export function SnapBar({ open, setOpen, onPhoto, onNote, buttonRef }) {
   return (
     <>
       {open && <div className="snap-back" onClick={() => setOpen(false)} />}
       <div className={`snapbar ${open ? 'open' : ''}`}>
-        <button type="button" className="snap-opt left" tabIndex={open ? 0 : -1} onClick={() => { setOpen(false); onSnapNow() }}>Snap Now</button>
-        <button type="button" className="snap-opt right" tabIndex={open ? 0 : -1} onClick={() => { setOpen(false); onSnapLater() }}>Snap Later</button>
+        <button type="button" className="snap-opt left" tabIndex={open ? 0 : -1} onClick={() => { setOpen(false); onPhoto() }}>Photo</button>
+        <button type="button" className="snap-opt right" tabIndex={open ? 0 : -1} onClick={() => { setOpen(false); onNote() }}>Note</button>
         <button ref={buttonRef} type="button" className="snap-plus" onClick={() => setOpen(!open)} aria-label="Snap a grape" aria-expanded={open}>
           <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden><path d="M11 4v14M4 11h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
         </button>
@@ -23,7 +23,7 @@ const SIZE = GRAPE_PX
  * 찍은 사진이 포도알이 되어 떠 있고, 끌어다 빈 칸에 놓으면 그 칸에 들어가요.
  * from: 처음 튀어나올 위치(하단 + 버튼), getSlots(): [{ i, rect }], onHot(i|null), onPlace(i) → Promise
  */
-export function PlaceGrape({ url, color, from, getSlots, onHot, onPlace, onCancel }) {
+export function PlaceGrape({ url, note, color, from, getSlots, onHot, onPlace, onCancel }) {
   const rest = () => ({ x: 28 + SIZE / 2, y: window.innerHeight - 130 })
   const [pos, setPos] = useState(rest)
   const [mode, setMode] = useState('rest') // rest | drag | snap | back
@@ -97,7 +97,7 @@ export function PlaceGrape({ url, color, from, getSlots, onHot, onPlace, onCance
     <>
       <div className={`place-hint ${mode === 'drag' || mode === 'snap' ? 'hide' : ''}`}>
         <span>drag your grape into the bunch</span>
-        <button type="button" onClick={onCancel} aria-label="Discard photo">✕</button>
+        <button type="button" onClick={onCancel} aria-label="Discard grape">✕</button>
       </div>
       <div
         ref={elRef}
@@ -105,7 +105,7 @@ export function PlaceGrape({ url, color, from, getSlots, onHot, onPlace, onCance
         style={{
           left: pos.x - size / 2, top: pos.y - size / 2, width: size, height: size,
           borderRadius: size * 0.5 * SQ,
-          backgroundImage: `url(${url})`,
+          backgroundImage: url ? `url(${url})` : `radial-gradient(115% 115% at 18% 12%, ${color.me[0]}, ${color.me[1]} 60%)`,
           '--pc': color.me[1],
         }}
         onPointerDown={down}
@@ -114,7 +114,7 @@ export function PlaceGrape({ url, color, from, getSlots, onHot, onPlace, onCance
         onPointerCancel={up}
         role="button"
         aria-label="Drag this grape into an empty spot"
-      />
+      >{!url && note && <span className="place-note">{note}</span>}</div>
     </>
   )
 }
