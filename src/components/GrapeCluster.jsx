@@ -246,7 +246,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
             ) : (
               <>
                 {/* 아주 살짝 비치는 유리판 */}
-                <rect {...box} fill={`url(#bd${w}${ci}${gid})`} fillOpacity={other ? 0.72 : 0.86} />
+                <g opacity={other ? 0.72 : 0.86}>
+                  <rect {...box} fill={other ? col.friend[1] : col.me[1]} />
+                  <rect {...box} fill={`url(#bd${w}${ci}${gid})`} opacity=".7" />
+                </g>
                 {/* 반투명 흰 막 */}
                 <rect {...box} fill="#fff" opacity={other ? 0.16 : 0.06} />
               </>
@@ -311,17 +314,18 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         {GOAL_COLORS.map((col, k) => ['m', 'f'].map((w) => {
           const [hi, lo] = w === 'm' ? col.me : col.friend
           return (
-            <linearGradient key={k + w} id={`bd${w}${k}${gid}`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor={hi} stopOpacity=".25" />
-              <stop offset=".3" stopColor={lo} />
+            <radialGradient key={k + w} id={`bd${w}${k}${gid}`} cx="18%" cy="12%" r="115%">
+              {/* 왼쪽 위에서 넓고 부드럽게 퍼지는 빛 (경계 없이) */}
+              <stop offset="0" stopColor={hi} />
+              <stop offset=".25" stopColor={hi} stopOpacity=".55" />
+              <stop offset=".6" stopColor={lo} stopOpacity=".96" />
               <stop offset="1" stopColor={lo} />
-            </linearGradient>
+            </radialGradient>
           )
         }))}
         <linearGradient id={`edge${gid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity=".25" />
-          <stop offset=".5" stopColor="#fff" stopOpacity=".06" />
-          <stop offset="1" stopColor="#fff" stopOpacity=".1" />
+          <stop offset="0" stopColor="#fff" stopOpacity=".16" />
+          <stop offset="1" stopColor="#fff" stopOpacity=".08" />
         </linearGradient>
         <linearGradient id={`frost${gid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#F8F7FB" />
