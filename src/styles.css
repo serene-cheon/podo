@@ -178,7 +178,6 @@ input { font: inherit; }
 .grape.tap { cursor: pointer; }
 .grape-label { font-family: var(--sans); font-size: 13px; font-weight: 500; pointer-events: none; }
 .grape .pop { animation: pop .55s cubic-bezier(.3,1.6,.5,1) both; transform-box: fill-box; transform-origin: center; }
-.grape.next > g { animation: pulse 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
 .grape.tap:active { opacity: .8; }
 
 /* viewer: 포도알 → 네모 카드 */

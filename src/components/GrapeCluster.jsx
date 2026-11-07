@@ -222,9 +222,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
               <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
             </>
           )}
-          {!photo && team && (
-            <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={other ? col.label : '#fff'}>
-              {other ? [...(labelOf?.(c.uid) || '?')][0].toUpperCase() : 'ME'}
+          {/* 친구 알에만 이름 첫 글자 (내 알은 진한 색으로 구분) */}
+          {!photo && team && other && (
+            <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={col.label}>
+              {[...(labelOf?.(c.uid) || '?')][0].toUpperCase()}
             </text>
           )}
           {c?.mediaType === 'video' && <path d="M-4 -6 L7 0 L-4 6 Z" fill="#fff" opacity=".95" transform={team ? 'translate(0 9) scale(.6)' : undefined} />}
