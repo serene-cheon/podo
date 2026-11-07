@@ -248,14 +248,12 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                 {/* 아주 살짝 비치는 유리판 */}
                 <g opacity={other ? 0.72 : 0.86}>
                   <rect {...box} fill={other ? col.friend[1] : col.me[1]} />
-                  <rect {...box} fill={`url(#bd${w}${ci}${gid})`} opacity=".7" />
+                  <rect {...box} fill={`url(#bd${w}${ci}${gid})`} />
                 </g>
                 {/* 반투명 흰 막 */}
                 <rect {...box} fill="#fff" opacity={other ? 0.16 : 0.06} />
               </>
             )}
-            {/* 안쪽으로 번지는 서리 빛 */}
-            <rect {...box} fill="none" stroke="#fff" strokeOpacity={photo ? 0.06 : 0.1} strokeWidth="3" filter={`url(#soft${gid})`} />
           </g>
           {/* 빛나는 유리 테두리 (왼쪽 위가 더 밝게) */}
           <rect {...box} x={-p.r + 0.5} y={-p.r + 0.5} width={p.r * 2 - 1} height={p.r * 2 - 1} rx={rx - 0.5} fill="none" stroke={`url(#edge${gid})`} strokeWidth="1" opacity={photo ? 0.7 : 1} />
@@ -314,18 +312,16 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
         {GOAL_COLORS.map((col, k) => ['m', 'f'].map((w) => {
           const [hi, lo] = w === 'm' ? col.me : col.friend
           return (
-            <radialGradient key={k + w} id={`bd${w}${k}${gid}`} cx="18%" cy="12%" r="115%">
-              {/* 왼쪽 위에서 넓고 부드럽게 퍼지는 빛 (경계 없이) */}
-              <stop offset="0" stopColor={hi} />
-              <stop offset=".25" stopColor={hi} stopOpacity=".55" />
-              <stop offset=".6" stopColor={lo} stopOpacity=".96" />
-              <stop offset="1" stopColor={lo} />
-            </radialGradient>
+            <linearGradient key={k + w} id={`bd${w}${k}${gid}`} x1="0" y1="0" x2="0" y2="1">
+              {/* 거의 평평한 유리판: 위→아래로 아주 미세하게만 */}
+              <stop offset="0" stopColor="#fff" stopOpacity=".07" />
+              <stop offset="1" stopColor="#000" stopOpacity=".03" />
+            </linearGradient>
           )
         }))}
         <linearGradient id={`edge${gid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity=".16" />
-          <stop offset="1" stopColor="#fff" stopOpacity=".08" />
+          <stop offset="0" stopColor="#fff" stopOpacity=".35" />
+          <stop offset="1" stopColor="#fff" stopOpacity=".22" />
         </linearGradient>
         <linearGradient id={`frost${gid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#F8F7FB" />
