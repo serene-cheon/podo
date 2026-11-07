@@ -241,6 +241,7 @@ export default function Room({ api, user, id }) {
 
       {isPersonal(goal) && (
         <button className={`my-goal ${myGoalOf(room, goal, user.uid) ? '' : 'unset'}`} onClick={() => setMyGoalOpen(true)}>
+          <span className="team-goal-pill" title="Team goal">{goal.title}</span>
           <span className="mono muted">my goal</span>
           <b>{myGoalOf(room, goal, user.uid) ? titleFor(room, goal, user.uid) : 'set your own goal'}</b>
           <span className="my-goal-edit" aria-hidden>edit</span>
