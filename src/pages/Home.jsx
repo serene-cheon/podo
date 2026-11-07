@@ -58,8 +58,8 @@ export default function Home({ api, user }) {
       </section>
 
       <div className="bottom-actions">
-        <button className="btn ghost" onClick={() => setSheet('join')}>join with code</button>
-        <button className="btn primary" onClick={() => setSheet('create')}>+ new room</button>
+        <button className="btn ghost" onClick={() => setSheet('join')}>Join with code</button>
+        <button className="btn primary" onClick={() => setSheet('create')}>+ New room</button>
       </div>
 
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
@@ -177,9 +177,9 @@ function ProfileSheet({ api, user, onClose }) {
           </button>
           <input ref={fileRef} type="file" accept="image/*" hidden onChange={pick} />
           <div className="profile-photo-actions">
-            <button type="button" className="link-mono" onClick={() => fileRef.current?.click()}>change photo</button>
-            {user.googlePhoto && photo !== user.googlePhoto && <button type="button" className="link-mono" onClick={() => setPhoto(user.googlePhoto)}>use Google photo</button>}
-            {photo && <button type="button" className="link-mono muted" onClick={() => setPhoto(null)}>remove</button>}
+            <button type="button" className="link-mono" onClick={() => fileRef.current?.click()}>Change photo</button>
+            {user.googlePhoto && photo !== user.googlePhoto && <button type="button" className="link-mono" onClick={() => setPhoto(user.googlePhoto)}>Use Google photo</button>}
+            {photo && <button type="button" className="link-mono muted" onClick={() => setPhoto(null)}>Remove</button>}
           </div>
         </div>
 
@@ -197,8 +197,8 @@ function ProfileSheet({ api, user, onClose }) {
           <span className="google-badge">{isDemo ? 'demo' : 'connected'}</span>
         </div>
 
-        <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'saving…' : 'save'}</button>
-        <button type="button" className="btn danger block" onClick={() => confirm('Sign out?') && api.signOut()}>sign out</button>
+        <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'Saving…' : 'Save'}</button>
+        <button type="button" className="btn danger block" onClick={() => confirm('Sign out?') && api.signOut()}>Sign out</button>
         <p className="mono muted center build-tag">build {BUILD} UTC</p>
       </form>
     </Sheet>

@@ -299,7 +299,7 @@ export default function Room({ api, user, id }) {
         )}
         {total > 0 && (done >= total || !isCurrent) && (
           <button className="btn ghost save-img" onClick={saveWeek} disabled={saving}>
-            {saving ? 'making image…' : 'save as image ↓'}
+            {saving ? 'Making image…' : 'Save as image ↓'}
           </button>
         )}
       </section>
@@ -470,8 +470,8 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
           <span className="mono muted small">tap code to copy</span>
         </div>
         <div className="invite-actions">
-          <button type="button" className="btn primary" onClick={onShare}>share invite</button>
-          <button type="button" className="btn ghost" onClick={onCopyLink}>copy link</button>
+          <button type="button" className="btn primary" onClick={onShare}>Share invite</button>
+          <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
         </div>
       </section>
       <form className="form" onSubmit={save}>
@@ -502,7 +502,7 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
           })}
         </div>
         {isOwner
-          ? <button className="btn primary block" disabled={busy || !trimmed || !clean.length}>{busy ? 'saving…' : 'save'}</button>
+          ? <button className="btn primary block" disabled={busy || !trimmed || !clean.length}>{busy ? 'Saving…' : 'Save'}</button>
           : <p className="mono muted center">only hosts can change room settings</p>}
       </form>
     </Sheet>
@@ -527,7 +527,7 @@ function NoteSheet({ onClose, onDone }) {
     <Sheet title="Note" onClose={onClose}>
       <form className="form" onSubmit={(e) => { e.preventDefault(); if (text.trim()) onDone(text.trim()) }}>
         <input className="note-input" value={text} onChange={(e) => setText(e.target.value)} placeholder="What did you do today?" maxLength={60} autoFocus />
-        <button className="btn primary block" disabled={!text.trim()}>make it a grape</button>
+        <button className="btn primary block" disabled={!text.trim()}>Make it a grape</button>
       </form>
     </Sheet>
   )
@@ -551,7 +551,7 @@ function MyGoalSheet({ goal, mine, onClose, onSave }) {
             <button type="button" key={n} className={n === target ? 'on' : ''} onClick={() => setTarget(n)}>{n}</button>
           ))}
         </div>
-        <button className="btn primary block" disabled={busy || !title.trim()}>{busy ? 'saving…' : 'save'}</button>
+        <button className="btn primary block" disabled={busy || !title.trim()}>{busy ? 'Saving…' : 'Save'}</button>
       </form>
     </Sheet>
   )

@@ -39,7 +39,7 @@ export default function GoalsEditor({ goals, onChange, disabled }) {
       ))}
       {!disabled && goals.length < MAX_GOALS && (
         <button type="button" className="link-mono add-goal" onClick={() => onChange([...goals, { id: newGoalId(), title: '', target: 3, color: nextColor(goals), mode: 'team' }])}>
-          + add another goal
+          + Add another goal
         </button>
       )}
     </div>
