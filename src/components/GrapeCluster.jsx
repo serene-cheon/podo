@@ -252,7 +252,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
               </>
             )}
             {/* 안쪽으로 번지는 서리 빛 */}
-            <rect {...box} fill="none" stroke="#fff" strokeOpacity={photo ? 0.12 : 0.2} strokeWidth="3" filter={`url(#soft${gid})`} />
+            <rect {...box} fill="none" stroke="#fff" strokeOpacity={photo ? 0.06 : 0.1} strokeWidth="3" filter={`url(#soft${gid})`} />
           </g>
           {/* 빛나는 유리 테두리 (왼쪽 위가 더 밝게) */}
           <rect {...box} x={-p.r + 0.5} y={-p.r + 0.5} width={p.r * 2 - 1} height={p.r * 2 - 1} rx={rx - 0.5} fill="none" stroke={`url(#edge${gid})`} strokeWidth="1" opacity={photo ? 0.7 : 1} />
@@ -312,16 +312,16 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           const [hi, lo] = w === 'm' ? col.me : col.friend
           return (
             <linearGradient key={k + w} id={`bd${w}${k}${gid}`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor={hi} stopOpacity=".55" />
-              <stop offset=".4" stopColor={lo} />
+              <stop offset="0" stopColor={hi} stopOpacity=".25" />
+              <stop offset=".3" stopColor={lo} />
               <stop offset="1" stopColor={lo} />
             </linearGradient>
           )
         }))}
         <linearGradient id={`edge${gid}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity=".5" />
-          <stop offset=".5" stopColor="#fff" stopOpacity=".12" />
-          <stop offset="1" stopColor="#fff" stopOpacity=".2" />
+          <stop offset="0" stopColor="#fff" stopOpacity=".25" />
+          <stop offset=".5" stopColor="#fff" stopOpacity=".06" />
+          <stop offset="1" stopColor="#fff" stopOpacity=".1" />
         </linearGradient>
         <linearGradient id={`frost${gid}`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#F8F7FB" />
