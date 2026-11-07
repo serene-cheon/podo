@@ -230,18 +230,32 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const ci = (colorOfCheckin && c ? colorOfCheckin(c) : color) % GOAL_COLORS.length
     const col = colorOf(ci)
     if (modern) {
-      // 모던: 살짝 둥근 사각형. 사진이 있으면 그 안에 사진
+      // 모던: 둥근 사각형 + 오로라 글로우·림 라이트·유리 돔 질감. 사진이 있으면 사진 위에 유리 광택만
       const photo = c?.mediaType === 'photo' && c.mediaUrl
       const rx = p.r * SQ
+      const w = other ? 'f' : 'm'
+      const box = { x: -p.r, y: -p.r, width: p.r * 2, height: p.r * 2, rx }
       return (
         <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
-          <rect x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={rx} fill={other ? col.friend[1] : col.me[1]} filter={`url(#sh${gid})`} />
-          {photo && (
-            <>
-              <clipPath id={`c${i}${gid}`}><rect x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={rx} /></clipPath>
-              <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
-            </>
-          )}
+          {/* 바깥으로 번지는 오로라 */}
+          <rect {...box} x={-p.r + 1.5} y={-p.r + 2.5} width={p.r * 2 - 3} height={p.r * 2 - 3} fill={col.aura} opacity={other ? 0.28 : 0.55} filter={`url(#aura${gid})`} />
+          <clipPath id={`c${i}${gid}`}><rect {...box} /></clipPath>
+          <g clipPath={`url(#c${i}${gid})`}>
+            {photo ? (
+              <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" />
+            ) : (
+              <>
+                <rect {...box} fill={`url(#bd${w}${ci}${gid})`} />
+                {/* 윗가장자리 림 라이트 */}
+                <path d={`M${-p.r * 0.85} ${-p.r * 0.2} Q0 ${-p.r * 0.85} ${p.r * 0.85} ${-p.r * 0.2}`} fill="none" stroke={col.rim} strokeWidth="6" strokeLinecap="round" opacity={other ? 0.4 : 0.75} filter={`url(#glow${gid})`} />
+                {/* 아래쪽 유리 돔 */}
+                <ellipse cx="0" cy={p.r * 0.55} rx={p.r * 1.15} ry={p.r * 0.98} fill={`url(#dm${w}${ci}${gid})`} filter={`url(#glow${gid})`} />
+              </>
+            )}
+            {/* 위쪽 유리 광택 + 안쪽 은은한 빛 테두리 */}
+            <rect {...box} fill={`url(#sheen${gid})`} opacity={photo ? 0.6 : 1} />
+            <rect {...box} fill="none" stroke="#fff" strokeOpacity={photo ? 0.28 : 0.35} strokeWidth="2.2" filter={`url(#soft${gid})`} />
+          </g>
           {/* 글씨 없이 색으로만: 내 알은 진하게, 친구 알은 연하게 */}
           {c?.mediaType === 'video' && <path d="M-4 -6 L7 0 L-4 6 Z" fill="#fff" opacity=".95" transform={team ? 'translate(0 9) scale(.6)' : undefined} />}
         </g>
@@ -293,6 +307,36 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           <stop offset=".85" stopColor="#000" stopOpacity="0" />
           <stop offset="1" stopColor="#000" stopOpacity=".14" />
         </radialGradient>
+        {/* 질감: 몸통(위→아래 짙게), 유리 돔(아래쪽 반투명 테두리), 광택, 빈 칸 서리 유리 */}
+        {GOAL_COLORS.map((col, k) => ['m', 'f'].map((w) => {
+          const [hi, lo] = w === 'm' ? col.me : col.friend
+          return (
+            <Fragment key={k + w}>
+              <linearGradient id={`bd${w}${k}${gid}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={lo} />
+                <stop offset=".55" stopColor={lo} />
+                <stop offset="1" stopColor={w === 'm' ? lo : hi} />
+              </linearGradient>
+              <radialGradient id={`dm${w}${k}${gid}`} cx="50%" cy="80%" r="62%">
+                <stop offset="0" stopColor={w === 'm' ? lo : hi} stopOpacity="0" />
+                <stop offset=".62" stopColor="#fff" stopOpacity={w === 'm' ? '.08' : '.15'} />
+                <stop offset=".86" stopColor="#fff" stopOpacity={w === 'm' ? '.62' : '.7'} />
+                <stop offset="1" stopColor="#fff" stopOpacity="0" />
+              </radialGradient>
+            </Fragment>
+          )
+        }))}
+        <linearGradient id={`sheen${gid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity=".42" />
+          <stop offset=".45" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id={`frost${gid}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#F8F7FB" />
+          <stop offset="1" stopColor="#ECEBF1" />
+        </linearGradient>
+        <filter id={`aura${gid}`} x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="3.4" /></filter>
+        <filter id={`soft${gid}`} x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="1.3" /></filter>
+        <filter id={`glow${gid}`} x="-100%" y="-300%" width="300%" height="700%"><feGaussianBlur stdDeviation="2.8" /></filter>
         {/* 포도알 아래 부드러운 그림자 */}
         <filter id={`sh${gid}`} x="-40%" y="-40%" width="180%" height="190%">
           <feDropShadow dx="0" dy="2.2" stdDeviation="2.4" floodColor="#2A1F45" floodOpacity=".16" />
@@ -365,8 +409,8 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                 <g className="slot">
                   <rect
                     x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={p.r * SQ}
-                    fill={isHot ? colorOf(color).friend[0] : '#ECEBEF'}
-                    stroke={isHot ? colorOf(color).me[1] : 'none'} strokeWidth="2"
+                    fill={isHot ? colorOf(color).friend[0] : `url(#frost${gid})`}
+                    stroke={isHot ? colorOf(color).me[1] : '#fff'} strokeWidth={isHot ? 2 : 1.2} strokeOpacity={isHot ? 1 : 0.9}
                   />
                 </g>
               ) : (

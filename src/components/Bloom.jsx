@@ -75,12 +75,17 @@ export default function Bloom({ item, phase, member, goal, canRemove, onRemove, 
   }, [target, onClose])
 
   const wash = isMine ? color?.me : color?.friend
-  const bg = wash ? wash[1] : 'var(--grape-soft)' // 포도알과 같은 단색
+  // 포도알과 같은 질감: 림 라이트 + 유리 돔 + 위→아래 그라데이션, 바깥엔 오로라 빛
+  const [hi, lo] = wash || ['#E6DDF5', '#C9B5EE']
+  const bg = `radial-gradient(60% 34% at 50% 14%, ${color?.rim || '#fff'}${isMine ? '99' : '55'}, transparent 70%), `
+    + `radial-gradient(120% 95% at 50% 96%, transparent 52%, rgba(255,255,255,${isMine ? '.5' : '.6'}) 78%, transparent 90%), `
+    + `linear-gradient(${lo}, ${lo} 55%, ${isMine ? lo : hi})`
+  const aura = color?.aura ? `0 16px 46px ${color.aura}${isMine ? '80' : '50'}` : undefined
 
   return (
     <div className={`bloom bloom-${shown}`} onClick={target === 'open' ? onClose : undefined}>
       <div className="bloom-back" />
-      <div ref={elRef} className="bloom-el" style={{ background: bg, ...css(B.grape) }} onClick={(e) => e.stopPropagation()}>
+      <div ref={elRef} className="bloom-el" style={{ background: bg, boxShadow: aura, ...css(B.grape) }} onClick={(e) => e.stopPropagation()}>
         {hasMedia && (c.mediaType === 'video'
           ? <video src={c.mediaUrl} autoPlay loop playsInline muted />
           : <img src={c.mediaUrl} alt="" draggable={false} />)}
