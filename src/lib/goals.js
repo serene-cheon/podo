@@ -31,3 +31,7 @@ export function nextColor(goals) {
   for (let i = 0; i < 5; i++) if (!used.has(i)) return i
   return goals.length % 5
 }
+
+// 방 호스트(여러 명 가능). 예전 방은 만든 사람(ownerId) 한 명
+export const hostsOf = (room) => (room?.hostIds?.length ? room.hostIds : room?.ownerId ? [room.ownerId] : [])
+export const isHostOf = (room, uid) => hostsOf(room).includes(uid)

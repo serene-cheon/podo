@@ -11,7 +11,7 @@ import { toast } from '../components/Toast.jsx'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import { makeWeekImage, saveImage } from '../lib/weekImage.js'
 import { weekKey, shiftWeek, weekLabel, daysLeft } from '../lib/week.js'
-import { goalsOf, goalIdOf, cleanGoals, goalFields } from '../lib/goals.js'
+import { goalsOf, goalIdOf, cleanGoals, goalFields, hostsOf, isHostOf } from '../lib/goals.js'
 import GoalsEditor from '../components/GoalsEditor.jsx'
 import { colorOf } from '../lib/colors.js'
 
@@ -228,7 +228,7 @@ export default function Room({ api, user, id }) {
 
       <nav className="week-nav">
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="Previous week">‹</button>
-        <span className="mono">{weekLabel(week).toLowerCase()}{isCurrent ? ' · this week' : ''}</span>
+        <span className="mono">{weekLabel(week).toLowerCase()}{isCurrent ? ` · ${daysLeft(week)} day${daysLeft(week) === 1 ? '' : 's'} left` : ''}</span>
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="Next week">›</button>
       </nav>
 
@@ -253,7 +253,7 @@ export default function Room({ api, user, id }) {
           color={goal.color}
           checkins={teamFilled}
           size={GRAPE_SCALE}
-          maxWidth={grapeMaxWidth(16)}
+          maxWidth={grapeMaxWidth(36)}
           key={goal.id}
           apiRef={bunchApi}
           slotted
@@ -273,17 +273,6 @@ export default function Room({ api, user, id }) {
             {goals.map((g, i) => <i key={g.id} className={i === goalIdx ? 'on' : ''} style={{ background: i === goalIdx ? colorOf(g.color).me[1] : undefined }} />)}
           </div>
         )}
-        <div className="legend">
-          <span><i className="dot" style={{ background: `radial-gradient(circle at 40% 38%, ${gc.me[0]}, ${gc.me[1]})` }} /> you</span>
-          <span><i className="dot" style={{ background: `radial-gradient(circle at 40% 38%, ${gc.friend[0]}, ${gc.friend[1]})` }} /> friends</span>
-        </div>
-        <p className="me-label mono">
-          {busy ? 'Adding…'
-            : !isCurrent ? `you added ${Math.min(mine.length, target)}/${target}`
-            : mine.length >= target ? `you're done this week (${target}/${target})`
-            : `tap + to snap your grape · you ${mine.length}/${target}`}
-        </p>
-        {isCurrent && done < total && <small className="mono muted">{daysLeft(week)} day{daysLeft(week) === 1 ? '' : 's'} left · fill it together</small>}
         {total > 0 && (done >= total || !isCurrent) && (
           <button className="btn ghost save-img" onClick={saveWeek} disabled={saving}>
             {saving ? 'making image…' : 'save as image ↓'}
@@ -356,8 +345,8 @@ export default function Room({ api, user, id }) {
         <SettingsSheet
           api={api}
           room={room}
-          isOwner={room.ownerId === user.uid}
-          ownerName={room.members[room.ownerId]?.name}
+          isOwner={isHostOf(room, user.uid)}
+          me={user.uid}
           onCopyCode={() => copy(id, 'Code copied')}
           onCopyLink={() => copy(inviteUrl, 'Link copied')}
           onShare={share}
@@ -403,10 +392,12 @@ export default function Room({ api, user, id }) {
 }
 
 // 방 설정: 방장은 방 이름과 골을 바꿀 수 있고, 다른 멤버는 보기만
-function SettingsSheet({ api, room, isOwner, ownerName, onCopyCode, onCopyLink, onShare, onClose }) {
+function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare, onClose }) {
   const [name, setName] = useState(room.name)
   const [goals, setGoals] = useState(() => goalsOf(room).map((g) => ({ ...g })))
+  const [hosts, setHosts] = useState(() => hostsOf(room))
   const [busy, setBusy] = useState(false)
+  const toggleHost = (uid) => setHosts((h) => (h.includes(uid) ? (h.length > 1 ? h.filter((x) => x !== uid) : h) : [...h, uid]))
   const trimmed = name.trim()
   const clean = cleanGoals(goals)
   async function save(e) {
@@ -414,9 +405,10 @@ function SettingsSheet({ api, room, isOwner, ownerName, onCopyCode, onCopyLink, 
     if (!trimmed || !clean.length) return
     const removed = goalsOf(room).filter((g) => !clean.some((c) => c.id === g.id))
     if (removed.length && !confirm(`Remove ${removed.map((g) => `“${g.title}”`).join(', ')}? Its grapes will be hidden.`)) return
+    if (!hosts.includes(me) && !confirm("You won't be a host anymore and can't change settings. Continue?")) return
     setBusy(true)
     try {
-      await api.updateRoom(room.id, { name: trimmed, ...goalFields(clean) })
+      await api.updateRoom(room.id, { name: trimmed, ...goalFields(clean), hostIds: hosts })
       toast('Room updated')
       onClose()
     } catch (err) {
@@ -445,13 +437,30 @@ function SettingsSheet({ api, room, isOwner, ownerName, onCopyCode, onCopyLink, 
         </label>
         <div className="label">goals</div>
         <GoalsEditor goals={goals} onChange={setGoals} disabled={!isOwner} />
-        <div className="account-row">
-          <span className="mono muted">host</span>
-          <span className="mono">{isOwner ? 'you' : ownerName || '—'}</span>
+        <div className="label">hosts {isOwner && <span className="hint">tap to add or remove · hosts can edit the room</span>}</div>
+        <div className="host-list">
+          {room.memberIds.map((uid) => {
+            const m = room.members[uid] || {}
+            const on = hosts.includes(uid)
+            return (
+              <button
+                type="button"
+                key={uid}
+                className={`host-chip ${on ? 'on' : ''}`}
+                disabled={!isOwner || (on && hosts.length === 1)}
+                onClick={() => toggleHost(uid)}
+                aria-pressed={on}
+              >
+                <Avatar name={m.name} photo={m.photo} size={24} />
+                <span>{uid === me ? 'You' : m.name}</span>
+                {on && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M5 12l5 5 9-10" /></svg>}
+              </button>
+            )
+          })}
         </div>
         {isOwner
           ? <button className="btn primary block" disabled={busy || !trimmed || !clean.length}>{busy ? 'saving…' : 'save'}</button>
-          : <p className="mono muted center">only the host can change room settings</p>}
+          : <p className="mono muted center">only hosts can change room settings</p>}
       </form>
     </Sheet>
   )

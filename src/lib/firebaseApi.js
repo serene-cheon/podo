@@ -6,14 +6,22 @@ import {
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection, query, where, onSnapshot, runTransaction,
-  updateDoc, addDoc, deleteDoc, arrayUnion, serverTimestamp, getDocs, writeBatch,
+  updateDoc, addDoc, deleteDoc, arrayUnion, serverTimestamp, getDocs, writeBatch, getDoc, setDoc,
 } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { makeRoomCode } from './code.js'
 import { goalFields } from './goals.js'
 import { photoToDataUrl } from './inlinePhoto.js'
 
-const toUser = (u) => u && { uid: u.uid, name: u.displayName || 'No name', photo: u.photoURL || null, email: u.email || null }
+// 구글 계정 정보 + (users/{uid} 에 저장한) 내가 고른 닉네임·프로필 사진
+const toUser = (u, prof = {}) => u && {
+  uid: u.uid,
+  name: prof.name || u.displayName || 'No name',
+  photo: prof.photo !== undefined ? prof.photo : (u.photoURL || null),
+  email: u.email || null,
+  googleName: u.displayName || null,
+  googlePhoto: u.photoURL || null,
+}
 
 export function createFirebaseApi(config) {
   const app = initializeApp(config)
@@ -24,6 +32,7 @@ export function createFirebaseApi(config) {
   const storage = getStorage(app)
   storage.maxUploadRetryTime = 15000 // Storage 가 없을 때 오래 붙잡혀 있지 않게
   const authCbs = new Set() // 닉네임을 바꾸면 화면에 바로 반영하려고
+  let profile = {} // users/{uid}: { name, photo }
   let storageOk = true // Storage 가 없으면 한 번 실패 후 계속 인라인 저장
 
 
@@ -32,20 +41,32 @@ export function createFirebaseApi(config) {
 
     onAuth(cb) {
       authCbs.add(cb)
-      const off = onAuthStateChanged(auth, (u) => cb(toUser(u)))
+      const off = onAuthStateChanged(auth, async (u) => {
+        if (!u) return cb(null)
+        cb(toUser(u, profile)) // 바로 보여주고
+        try {
+          const d = await getDoc(doc(db, 'users', u.uid))
+          profile = d.exists() ? d.data() : {}
+          cb(toUser(u, profile)) // 저장된 프로필로 다시
+        } catch { /* 규칙 배포 전이면 구글 정보만 */ }
+      })
       return () => { authCbs.delete(cb); off() }
     },
 
-    // 닉네임 변경: 계정 이름 + 내가 속한 모든 방의 멤버 이름
-    async updateName(user, name) {
-      await updateProfile(auth.currentUser, { displayName: name })
+    // 프로필 변경 (닉네임 / 사진): users/{uid} 에 저장하고, 내가 속한 모든 방의 멤버 정보도 같이
+    async updateProfile(user, { name, photo }) {
+      const next = { name: name ?? user.name, photo: photo === undefined ? user.photo : photo }
+      await setDoc(doc(db, 'users', user.uid), next)
+      if (name) await updateProfile(auth.currentUser, { displayName: name }).catch(() => {})
       const snap = await getDocs(query(collection(db, 'rooms'), where('memberIds', 'array-contains', user.uid)))
       const batch = writeBatch(db)
-      snap.docs.forEach((d) => batch.update(d.ref, { [`members.${user.uid}.name`]: name }))
+      snap.docs.forEach((d) => batch.update(d.ref, { [`members.${user.uid}`]: { name: next.name, photo: next.photo || null } }))
       await batch.commit()
-      const u = toUser(auth.currentUser)
+      profile = next
+      const u = toUser(auth.currentUser, profile)
       authCbs.forEach((cb) => cb(u))
     },
+    updateName(user, name) { return this.updateProfile(user, { name }) },
 
     async signIn() {
       const provider = new GoogleAuthProvider()
@@ -93,6 +114,7 @@ export function createFirebaseApi(config) {
           tx.set(ref_, {
             name, ...goalFields(goals),
             ownerId: user.uid,
+            hostIds: [user.uid],
             memberIds: [user.uid],
             members: { [user.uid]: { name: user.name, photo: user.photo } },
             createdAt: serverTimestamp(),

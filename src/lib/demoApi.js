@@ -59,14 +59,21 @@ export default {
   mode: 'demo',
 
   onAuth: (cb) => sub(() => cb(db.user)),
-  async signIn() { db.user = { uid: 'me', name: 'Me', photo: null, email: 'demo@podoit.app' }; save() },
+  async signIn() { db.user = { uid: 'me', name: 'Me', photo: null, email: 'demo@podoit.app', googleName: 'Demo User', googlePhoto: null }; save() },
   async signOut() { db.user = null; save() },
 
-  async updateName(user, name) {
-    db.user = { ...db.user, name }
+  async updateProfile(user, { name, photo }) {
+    const next = { name: name ?? db.user.name, photo: photo === undefined ? db.user.photo : photo }
+    db.user = { ...db.user, ...next }
     for (const r of Object.values(db.rooms)) {
-      if (r.members[user.uid]) db.rooms[r.id] = { ...r, members: { ...r.members, [user.uid]: { ...r.members[user.uid], name } } }
+      if (r.members[user.uid]) db.rooms[r.id] = { ...r, members: { ...r.members, [user.uid]: { name: next.name, photo: next.photo || null } } }
     }
+    save()
+  },
+  updateName(user, name) { return this.updateProfile(user, { name }) },
+
+  async updateRoom(roomId, fields) {
+    db.rooms[roomId] = { ...db.rooms[roomId], ...fields }
     save()
   },
 
@@ -75,15 +82,10 @@ export default {
 
   watchRoom: (id, cb) => sub(() => cb(db.rooms[id] || null)),
 
-  async updateRoom(roomId, fields) {
-    db.rooms[roomId] = { ...db.rooms[roomId], ...fields }
-    save()
-  },
-
   async createRoom(user, { name, goals }) {
     const id = makeRoomCode()
     const room = {
-      id, name, ...goalFields(goals), ownerId: user.uid, createdAt: Date.now(),
+      id, name, ...goalFields(goals), ownerId: user.uid, hostIds: [user.uid], createdAt: Date.now(),
       memberIds: [user.uid], members: { [user.uid]: { name: user.name, photo: user.photo } },
     }
     db.rooms[id] = room

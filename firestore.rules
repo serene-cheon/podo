@@ -3,6 +3,18 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
     function me() { return request.auth.uid; }
+    // 호스트: hostIds 가 있으면 그 목록, 없으면(예전 방) 만든 사람
+    function isHost(d) { return d.get('hostIds', null) == null ? d.ownerId == me() : me() in d.hostIds; }
+
+    // 내 프로필 (닉네임, 프로필 사진)
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['name', 'photo'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1 && request.resource.data.name.size() <= 20
+        && (request.resource.data.photo == null || (request.resource.data.photo is string && request.resource.data.photo.size() < 120000));
+    }
 
     match /rooms/{roomId} {
       // 방 코드를 아는 사람은 참여 전에 방 이름/목표를 미리 볼 수 있음
@@ -20,10 +32,14 @@ service cloud.firestore {
         && request.resource.data.goals is list
         && request.resource.data.goals.size() >= 1 && request.resource.data.goals.size() <= 5;
 
-      // 방 설정: 방장만 방 이름 / 골 목록 변경 가능
+      // 방 설정: 호스트만 방 이름 / 골 목록 / 호스트 목록 변경 가능 (호스트는 1명 이상, 멤버 중에서)
       allow update: if signedIn()
-        && resource.data.ownerId == me()
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'goals', 'goal', 'target'])
+        && isHost(resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'goals', 'goal', 'target', 'hostIds'])
+        && (request.resource.data.get('hostIds', null) == null
+            || (request.resource.data.hostIds is list
+                && request.resource.data.hostIds.size() >= 1
+                && request.resource.data.memberIds.hasAll(request.resource.data.hostIds)))
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 1
         && request.resource.data.name.size() <= 30

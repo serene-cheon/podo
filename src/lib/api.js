@@ -21,13 +21,13 @@ export function loadApi() {
 
 /*
   API 모양 (두 구현이 똑같이 따릅니다)
-  user    = { uid, name, photo, email }
+  user    = { uid, name, photo, email, googleName, googlePhoto }
   room    = { id, name, goals: [{id, title, target}], goal, target(첫 골, 호환용), ownerId, memberIds: [uid], members: { [uid]: {name, photo} } }
   checkin = { id, uid, week, goalId, slot(포도송이에서 고른 칸), createdAt(ms), mediaType: 'photo'|'video'|null, mediaUrl, note }
 
   onAuth(cb) -> unsubscribe
   signIn(), signOut()
-  updateName(user, name)                         닉네임 변경 (모든 방에 반영)
+  updateProfile(user, {name, photo})             닉네임·프로필 사진 변경 (모든 방에 반영)
   watchMyRooms(uid, cb) -> unsubscribe
   watchRoom(roomId, cb) -> unsubscribe            cb(null) 이면 방이 없음
   createRoom(user, {name, goals}) -> roomId

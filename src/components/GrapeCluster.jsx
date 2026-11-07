@@ -17,13 +17,24 @@ const PAD = 1 // 송이 좌우 여백 (SVG 단위, 그림자는 밖으로 보임
 // 송이를 정확한 크기로 그리려면: size={GRAPE_SCALE}, maxWidth={grapeMaxWidth()} (좁은 화면에서만 줄어듦)
 export const grapeMaxWidth = (inset = 68) => Math.min(window.innerWidth, 480) - inset
 
-// 8알 이상: 5,4,3,2,1 처럼 한 줄씩 줄어드는 송이 모양
+// 8알 이상: 아래로 갈수록 좁아지는 진짜 포도송이 모양 (한 줄 최대 5알, 맨 아래는 1알)
+// 아래에서부터 1,2,3,4,5,5,5… 로 쌓고, 남는 알은 맨 위 '어깨' 줄로
+const MAX_ROW = 5
 function autoRows(n) {
-  let w = 1
-  while ((w * (w + 1)) / 2 < n) w++
-  const rows = []
-  for (let left = n, k = w; left > 0; k--) { rows.push(Math.min(k, left)); left -= k }
-  return rows
+  const up = [] // 아래 → 위
+  let left = n
+  for (let w = 1; left > 0; w = Math.min(w + 1, MAX_ROW)) {
+    const take = Math.min(w, left)
+    up.push(take)
+    left -= take
+  }
+  // 맨 위 줄이 1알만 남으면 어색하니까 아래 줄에 끼워 넣기 (모양이 위로 갈수록 넓어지도록)
+  if (up.length > 2 && up[up.length - 1] === 1) {
+    up.pop()
+    const k = up.findIndex((w, i) => i > 0 && w < MAX_ROW && w + 1 <= (up[i + 1] ?? MAX_ROW))
+    up[k >= 0 ? k : up.length - 1] += 1
+  }
+  return up.reverse()
 }
 
 // 손으로 붙인 것처럼 알마다 살짝 다른 위치/크기 (매번 같은 값)

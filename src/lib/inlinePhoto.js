@@ -19,3 +19,20 @@ export async function photoToDataUrl(blob, maxSide = 720) {
     URL.revokeObjectURL(url)
   }
 }
+
+// 프로필 사진: 가운데를 정사각형으로 잘라 작게 (약 10KB)
+export async function avatarToDataUrl(file, side = 192) {
+  const url = URL.createObjectURL(file)
+  try {
+    const img = new Image()
+    img.src = url
+    await img.decode()
+    const s = Math.min(img.naturalWidth, img.naturalHeight)
+    const c = document.createElement('canvas')
+    c.width = c.height = side
+    c.getContext('2d').drawImage(img, (img.naturalWidth - s) / 2, (img.naturalHeight - s) / 2, s, s, 0, 0, side, side)
+    return c.toDataURL('image/jpeg', 0.82)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
