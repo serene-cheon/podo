@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
@@ -57,31 +57,14 @@ export default function Room({ api, user, id }) {
   // 골 넘기기: 지금 포도알들이 + 로 빨려 들어간 뒤 → 새 골 포도알들이 + 에서 튀어나옴
   const bunchApi = useRef(null)
   const switching = useRef(false)
-  // 골 넘기기: 아래 작은 송이를 누르면 그 자리에서 커지며 위 큰 자리로 (fromRect), 스와이프면 옆에서 미끄러져 들어옴
-  const [dir, setDir] = useState(0)
-  const flipFrom = useRef(null)
-  const [zoomed, setZoomed] = useState(false) // 작은 송이에서 커지는 중엔 등장 애니메이션 생략
-  const stageRef = useRef(null)
-  function goTo(i, fromRect) {
+  // 여러 골: 양옆에 이전·다음 골 송이가 살짝 보이고, 밀거나 눌러서 넘김
+  const [dir, setDir] = useState(0) // 넘긴 방향 (애니메이션용)
+  function goTo(i) {
     if (i < 0 || i >= goals.length || i === goalIdx || switching.current) return
-    flipFrom.current = fromRect || null
-    setZoomed(!!fromRect)
-    setDir(fromRect ? 0 : i > goalIdx ? 1 : -1)
+    setDir(i > goalIdx ? 1 : -1)
     setGoalPick(goals[i].id)
     navigator.vibrate?.(8)
   }
-  useLayoutEffect(() => {
-    const from = flipFrom.current
-    const el = stageRef.current?.querySelector('svg.cluster')
-    if (!from || !el?.animate) return
-    flipFrom.current = null
-    const to = el.getBoundingClientRect()
-    const sx = from.width / to.width
-    el.animate([
-      { transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx})`, transformOrigin: 'top left', opacity: 0.6 },
-      { transform: 'none', transformOrigin: 'top left', opacity: 1 },
-    ], { duration: 460, easing: 'cubic-bezier(.32,.72,0,1)' })
-  }, [goalPick])
   // 포도송이를 좌우로 밀면 다음/이전 골
   const swipe = useRef(null)
   const onPointerDown = (e) => { swipe.current = { x: e.clientX, y: e.clientY } }
@@ -115,12 +98,6 @@ export default function Room({ api, user, id }) {
   const byUser = byGoal[goal.id] || {}
   const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, tOf(user.uid, g))
   // 다른 골의 팀 송이 (옆 송이 / 뒤 카드에 작게)
-  const teamCountOf = (g) => {
-    const by = byGoal[g.id] || {}
-    const tot = members.reduce((acc, m) => acc + targetFor(room, g, m.uid), 0)
-    const dn = members.reduce((acc, m) => acc + Math.min(by[m.uid]?.length || 0, targetFor(room, g, m.uid)), 0)
-    return `${dn}/${tot}`
-  }
   const miniBunch = (g, size) => {
     const by = byGoal[g.id] || {}
     const tot = members.reduce((acc, m) => acc + targetFor(room, g, m.uid), 0)
@@ -293,7 +270,13 @@ export default function Room({ api, user, id }) {
             <span className="me"><small>me</small><b>{myDone}</b>/{target}</span>
           </div>
         </div>
-        <div className="goal-stage" ref={stageRef}>
+        <div className={`goal-stage ${goals.length > 1 ? 'view-peek' : ''}`}>
+          {goals.length > 1 && goalIdx > 0 && (
+            <button className="peek peek-left" onClick={() => goTo(goalIdx - 1)} aria-label={`Previous goal: ${goals[goalIdx - 1].title}`}>{miniBunch(goals[goalIdx - 1], GRAPE_SCALE * 0.55)}</button>
+          )}
+          {goals.length > 1 && goalIdx < goals.length - 1 && (
+            <button className="peek peek-right" onClick={() => goTo(goalIdx + 1)} aria-label={`Next goal: ${goals[goalIdx + 1].title}`}>{miniBunch(goals[goalIdx + 1], GRAPE_SCALE * 0.55)}</button>
+          )}
         <div key={goal.id} className={`stage-main ${dir > 0 ? 'from-right' : dir < 0 ? 'from-left' : ''}`}>
         <GrapeCluster
           target={total}
@@ -303,7 +286,6 @@ export default function Room({ api, user, id }) {
           maxWidth={grapeMaxWidth(36)}
           key={goal.id}
           apiRef={bunchApi}
-          noEntry={zoomed}
           slotted
           dimFilled={!!placing}
           hotSlot={hot}
@@ -318,14 +300,8 @@ export default function Room({ api, user, id }) {
         </div>
         </div>
         {goals.length > 1 && (
-          <div className="other-goals">
-            {goals.map((g, i) => i === goalIdx ? null : (
-              <button key={g.id} className="other-goal" onClick={(e) => goTo(i, e.currentTarget.querySelector('svg')?.getBoundingClientRect())}>
-                {miniBunch(g, GRAPE_SCALE * 0.26)}
-                <span className="other-goal-title">{g.title}</span>
-                <span className="other-goal-count">{teamCountOf(g)}</span>
-              </button>
-            ))}
+          <div className="page-dots" aria-hidden>
+            {goals.map((g, i) => <i key={g.id} className={i === goalIdx ? 'on' : ''} style={{ background: i === goalIdx ? colorOf(g.color).me[1] : undefined }} />)}
           </div>
         )}
         {total > 0 && (done >= total || !isCurrent) && (
