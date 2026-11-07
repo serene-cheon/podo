@@ -75,12 +75,10 @@ export default function Bloom({ item, phase, member, goal, canRemove, onRemove, 
   }, [target, onClose])
 
   const wash = isMine ? color?.me : color?.friend
-  // 포도알과 같은 질감: 림 라이트 + 유리 돔 + 위→아래 그라데이션, 바깥엔 오로라 빛
+  // 포도알과 같은 유리판 질감: 대각선 바탕 + 반투명 흰 막 + 안쪽 서리 빛 테두리
   const [hi, lo] = wash || ['#E6DDF5', '#C9B5EE']
-  const bg = `radial-gradient(60% 34% at 50% 14%, ${color?.rim || '#fff'}${isMine ? '99' : '55'}, transparent 70%), `
-    + `radial-gradient(120% 95% at 50% 96%, transparent 52%, rgba(255,255,255,${isMine ? '.5' : '.6'}) 78%, transparent 90%), `
-    + `linear-gradient(${lo}, ${lo} 55%, ${isMine ? lo : hi})`
-  const aura = color?.aura ? `0 16px 46px ${color.aura}${isMine ? '80' : '50'}` : undefined
+  const bg = `linear-gradient(rgba(255,255,255,${isMine ? '.12' : '.22'}), rgba(255,255,255,${isMine ? '.12' : '.22'})), linear-gradient(135deg, ${hi}, ${lo} 55%, ${lo})`
+  const aura = `inset 0 0 0 1px rgba(255,255,255,.45), inset 0 0 22px rgba(255,255,255,.32), 0 14px 36px ${(color?.me?.[1] || '#7F5FCF')}${isMine ? '4D' : '2E'}`
 
   return (
     <div className={`bloom bloom-${shown}`} onClick={target === 'open' ? onClose : undefined}>
