@@ -492,3 +492,13 @@ button.member:active { background: var(--grape-soft); }
 .my-goal .mono { min-width: 64px; }
 .team-goal-pill { flex: none; max-width: 38%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 500; color: var(--ink); background: var(--grape-soft); border-radius: 999px; padding: 4px 10px; }
 .team-goal-pill + .mono { padding-left: 10px; border-left: 1px solid var(--line); min-width: 0; }
+/* 홈: 프로필 옆 + 버튼 → Create new room / Join with code */
+.add-menu-wrap { position: relative; }
+.add-room-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; transition: transform .25s cubic-bezier(.32,.72,0,1), background .2s; }
+.add-room-btn.open { transform: rotate(45deg); background: var(--ink); color: #fff; border-color: var(--ink); }
+.add-menu-back { position: fixed; inset: 0; z-index: 30; }
+.add-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 31; background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 12px 32px rgba(40,20,70,.14); padding: 6px; min-width: 190px; display: flex; flex-direction: column; transform-origin: top right; animation: menuin .22s cubic-bezier(.32,.72,0,1); }
+.add-menu button { border: 0; background: none; text-align: left; padding: 12px 14px; border-radius: 11px; font-size: 15px; color: var(--ink); }
+.add-menu button:active { background: var(--grape-soft); }
+@keyframes menuin { from { opacity: 0; transform: scale(.92) translateY(-4px); } }
+.top-actions { display: flex; align-items: center; gap: 6px; }

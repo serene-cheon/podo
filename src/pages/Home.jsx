@@ -16,15 +16,32 @@ import { avatarToDataUrl } from '../lib/inlinePhoto.js'
 export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
   const [sheet, setSheet] = useState(null) // 'create' | 'join' | 'profile'
+  const [menuOpen, setMenuOpen] = useState(false)
   useEffect(() => api.watchMyRooms(user.uid, setRooms), [api, user.uid])
 
   return (
     <main className="page">
       <header className="topbar">
         <h1 className="brand-hand">podoit</h1>
-        <button className="icon-btn" onClick={() => setSheet('profile')} aria-label="Profile">
-          <Avatar name={user.name} photo={user.photo} size={32} />
-        </button>
+        <div className="top-actions">
+          <div className="add-menu-wrap">
+            <button className={`add-room-btn ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen((o) => !o)} aria-label="New room or join" aria-expanded={menuOpen}>
+              <svg width="18" height="18" viewBox="0 0 22 22" aria-hidden><path d="M11 4v14M4 11h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" /></svg>
+            </button>
+            {menuOpen && (
+              <>
+                <div className="add-menu-back" onClick={() => setMenuOpen(false)} />
+                <div className="add-menu" role="menu">
+                  <button role="menuitem" onClick={() => { setMenuOpen(false); setSheet('create') }}>Create new room</button>
+                  <button role="menuitem" onClick={() => { setMenuOpen(false); setSheet('join') }}>Join with code</button>
+                </div>
+              </>
+            )}
+          </div>
+          <button className="icon-btn" onClick={() => setSheet('profile')} aria-label="Profile">
+            <Avatar name={user.name} photo={user.photo} size={32} />
+          </button>
+        </div>
       </header>
       {isDemo && <p className="demo-banner">Demo mode · two pretend friends join any room you create</p>}
 
@@ -36,7 +53,7 @@ export default function Home({ api, user }) {
           <div className="empty">
             <SproutDoodle size={96} />
             <h2>Start your first podo.</h2>
-            <p className="mono">create a room · invite friends · fill grapes</p>
+            <p className="mono">tap + to create a room or join with a code</p>
           </div>
         )}
         {rooms?.length > 0 && <h2 className="label-mono">my challenges</h2>}
@@ -57,10 +74,6 @@ export default function Home({ api, user }) {
         ))}
       </section>
 
-      <div className="bottom-actions">
-        <button className="btn ghost" onClick={() => setSheet('join')}>Join with code</button>
-        <button className="btn primary" onClick={() => setSheet('create')}>+ New room</button>
-      </div>
 
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} />}
