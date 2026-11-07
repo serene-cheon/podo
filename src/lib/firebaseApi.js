@@ -11,6 +11,7 @@ import {
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import { makeRoomCode } from './code.js'
 import { goalFields } from './goals.js'
+import { photoToDataUrl } from './inlinePhoto.js'
 
 const toUser = (u) => u && { uid: u.uid, name: u.displayName || 'No name', photo: u.photoURL || null, email: u.email || null }
 
@@ -21,7 +22,9 @@ export function createFirebaseApi(config) {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   })
   const storage = getStorage(app)
+  storage.maxUploadRetryTime = 15000 // Storage 가 없을 때 오래 붙잡혀 있지 않게
   const authCbs = new Set() // 닉네임을 바꾸면 화면에 바로 반영하려고
+  let storageOk = true // Storage 가 없으면 한 번 실패 후 계속 인라인 저장
 
 
   return {
@@ -122,11 +125,24 @@ export function createFirebaseApi(config) {
       let mediaUrl = null
       let mediaPath = null
       if (blob) {
-        const ext = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('webm') ? 'webm' : 'jpg'
-        mediaPath = `rooms/${roomId}/${user.uid}/${Date.now()}.${ext}`
-        const r = ref(storage, mediaPath)
-        await uploadBytes(r, blob, { contentType: blob.type, cacheControl: 'public,max-age=31536000' })
-        mediaUrl = await getDownloadURL(r)
+        // 1) Storage 에 올리기 → 2) Storage 가 없으면(무료 요금제 등) 사진을 작게 줄여 기록 안에 바로 저장
+        if (storageOk) {
+          try {
+            const ext = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('webm') ? 'webm' : 'jpg'
+            mediaPath = `rooms/${roomId}/${user.uid}/${Date.now()}.${ext}`
+            const r = ref(storage, mediaPath)
+            await uploadBytes(r, blob, { contentType: blob.type, cacheControl: 'public,max-age=31536000' })
+            mediaUrl = await getDownloadURL(r)
+          } catch (e) {
+            console.warn('Storage upload failed, saving photo inline instead', e)
+            storageOk = false
+            mediaPath = null
+          }
+        }
+        if (!mediaUrl) {
+          if (mediaType !== 'photo') throw new Error('Videos need Firebase Storage to be turned on')
+          mediaUrl = await photoToDataUrl(blob)
+        }
       }
       await addDoc(collection(db, 'rooms', roomId, 'checkins'), {
         uid: user.uid,

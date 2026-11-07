@@ -8,12 +8,12 @@ const R = 20
 const DX = R * 2 + 4
 const DY = R * 1.8 + 2
 const TOP = 46
-// 포도알 실제 크기 (아이폰 16/17, 393pt 기준): 55 × 55, 모서리 22, 칸 간격 9
-export const GRAPE_PX = 55
+// 포도알 실제 크기 (아이폰 16/17, 393pt 기준): 62 × 62, 모서리 25, 칸 간격 9
+export const GRAPE_PX = 62
 export const GRAPE_SCALE = GRAPE_PX / (R * 2) // SVG 단위 → 화면 px
-export const SQ = 22 / (GRAPE_PX / 2) // 모서리 반지름 / 포도알 반지름 = 0.8
+export const SQ = 25 / (GRAPE_PX / 2) // 모서리 반지름 / 포도알 반지름
 const GAP_M = 9 / GRAPE_SCALE // 칸 사이 9px
-const PAD = 4 // 송이 좌우 여백 (SVG 단위)
+const PAD = 2.5 // 송이 좌우 여백 (SVG 단위)
 // 송이를 정확한 크기로 그리려면: size={GRAPE_SCALE}, maxWidth={grapeMaxWidth()} (좁은 화면에서만 줄어듦)
 export const grapeMaxWidth = (inset = 68) => Math.min(window.innerWidth, 480) - inset
 
@@ -36,11 +36,12 @@ function layout(target, clean) {
   const rows = LAYOUTS[target] || autoRows(Math.max(1, target))
   const dx = clean ? R * 2 + GAP_M : DX
   const dy = clean ? dx : DY
+  const g = dx - R * 2 // 알 사이 간격 (줄 끝에는 간격이 없게)
   const maxRow = Math.max(...rows)
-  const width = maxRow * dx
+  const width = maxRow * dx - g
   const pts = []
   rows.forEach((n, r) => {
-    const startX = (width - n * dx) / 2 + dx / 2
+    const startX = (width - (n * dx - g)) / 2 + R
     for (let i = 0; i < n; i++) {
       const k = pts.length
       const j = clean ? 0 : 1
@@ -221,8 +222,6 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
               <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
             </>
           )}
-          {/* 내 알은 얇은 테두리로 구분 */}
-          {team && !other && <rect x={-p.r - 2.4} y={-p.r - 2.4} width={p.r * 2 + 4.8} height={p.r * 2 + 4.8} rx={rx + 2.4} fill="none" stroke={col.me[1]} strokeWidth="1.6" />}
           {!photo && team && (
             <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={other ? col.label : '#fff'}>
               {other ? [...(labelOf?.(c.uid) || '?')][0].toUpperCase() : 'ME'}
@@ -353,7 +352,6 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                     fill={isHot ? colorOf(color).friend[0] : '#ECEBEF'}
                     stroke={isHot ? colorOf(color).me[1] : 'none'} strokeWidth="2"
                   />
-                  {isNext && !isHot && <path d="M-5.5 0 H5.5 M0 -5.5 V5.5" stroke="#9A97A3" strokeWidth="1.5" strokeLinecap="round" />}
                 </g>
               ) : (
               <g filter={`url(#h${gid})`}>
