@@ -92,7 +92,7 @@ const INK = '#5A3A9E' // 줄기·빈 알 손그림 선
  * meUid, labelOf 를 주면 '팀 송이' 모드: 내 알은 진하게 + "me", 친구 알은 연하게 + 이름 첫 글자
  * tint: 'other' 면 전부 연한 색 (친구 개별 송이)
  */
-export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin, apiRef, slotted, dimFilled, hotSlot }) {
+export default function GrapeCluster({ target, checkins, size = 1, maxWidth, canAdd, onAdd, onPressStart, onPressEnd, hiddenId, meUid, labelOf, tint, color = 0, colorOfCheckin, apiRef, slotted, dimFilled, hotSlot, noEntry }) {
   const gid = useId().replace(/:/g, '')
   const modern = useTheme() === 'modern'
   const { pts, width, height } = layout(target, modern)
@@ -213,7 +213,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     slots.forEach((c, i) => { if (c && !seen.current.has(c.id)) fresh.push(i) })
     slots.forEach((c) => c && seen.current.add(c.id))
     if (!fresh.length) return
-    if (performance.now() - mountedAt.current < 1500) { burst(fresh); return }
+    if (performance.now() - mountedAt.current < 1500) { if (!noEntry) burst(fresh); return }
     const p = {}
     fresh.forEach((i, n) => { p[i] = n * 70 })
     setPops(p)

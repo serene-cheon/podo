@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
@@ -57,16 +57,31 @@ export default function Room({ api, user, id }) {
   // 골 넘기기: 지금 포도알들이 + 로 빨려 들어간 뒤 → 새 골 포도알들이 + 에서 튀어나옴
   const bunchApi = useRef(null)
   const switching = useRef(false)
-  // 여러 골 보기 방식 (이 기기에 저장): peek = 옆 송이가 살짝 보임, stack = 카드처럼 겹쳐 쌓기
-  const [goalView, setGoalViewState] = useState(() => { try { return localStorage.getItem('podo-goal-view') || 'peek' } catch { return 'peek' } })
-  const setGoalView = (v) => { setGoalViewState(v); try { localStorage.setItem('podo-goal-view', v) } catch { /* 무시 */ } }
-  const [dir, setDir] = useState(0) // 넘긴 방향 (애니메이션용)
-  function goTo(i) {
+  // 골 넘기기: 아래 작은 송이를 누르면 그 자리에서 커지며 위 큰 자리로 (fromRect), 스와이프면 옆에서 미끄러져 들어옴
+  const [dir, setDir] = useState(0)
+  const flipFrom = useRef(null)
+  const [zoomed, setZoomed] = useState(false) // 작은 송이에서 커지는 중엔 등장 애니메이션 생략
+  const stageRef = useRef(null)
+  function goTo(i, fromRect) {
     if (i < 0 || i >= goals.length || i === goalIdx || switching.current) return
-    setDir(i > goalIdx ? 1 : -1)
+    flipFrom.current = fromRect || null
+    setZoomed(!!fromRect)
+    setDir(fromRect ? 0 : i > goalIdx ? 1 : -1)
     setGoalPick(goals[i].id)
     navigator.vibrate?.(8)
   }
+  useLayoutEffect(() => {
+    const from = flipFrom.current
+    const el = stageRef.current?.querySelector('svg.cluster')
+    if (!from || !el?.animate) return
+    flipFrom.current = null
+    const to = el.getBoundingClientRect()
+    const sx = from.width / to.width
+    el.animate([
+      { transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx})`, transformOrigin: 'top left', opacity: 0.6 },
+      { transform: 'none', transformOrigin: 'top left', opacity: 1 },
+    ], { duration: 460, easing: 'cubic-bezier(.32,.72,0,1)' })
+  }, [goalPick])
   // 포도송이를 좌우로 밀면 다음/이전 골
   const swipe = useRef(null)
   const onPointerDown = (e) => { swipe.current = { x: e.clientX, y: e.clientY } }
@@ -100,6 +115,12 @@ export default function Room({ api, user, id }) {
   const byUser = byGoal[goal.id] || {}
   const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, tOf(user.uid, g))
   // 다른 골의 팀 송이 (옆 송이 / 뒤 카드에 작게)
+  const teamCountOf = (g) => {
+    const by = byGoal[g.id] || {}
+    const tot = members.reduce((acc, m) => acc + targetFor(room, g, m.uid), 0)
+    const dn = members.reduce((acc, m) => acc + Math.min(by[m.uid]?.length || 0, targetFor(room, g, m.uid)), 0)
+    return `${dn}/${tot}`
+  }
   const miniBunch = (g, size) => {
     const by = byGoal[g.id] || {}
     const tot = members.reduce((acc, m) => acc + targetFor(room, g, m.uid), 0)
@@ -272,16 +293,7 @@ export default function Room({ api, user, id }) {
             <span className="me"><small>me</small><b>{myDone}</b>/{target}</span>
           </div>
         </div>
-        <div className={`goal-stage view-${goals.length > 1 ? goalView : 'single'}`}>
-          {goals.length > 1 && goalView === 'peek' && goalIdx > 0 && (
-            <button className="peek peek-left" onClick={() => goTo(goalIdx - 1)} aria-label={`Previous goal: ${goals[goalIdx - 1].title}`}>{miniBunch(goals[goalIdx - 1], GRAPE_SCALE * 0.55)}</button>
-          )}
-          {goals.length > 1 && goalView === 'peek' && goalIdx < goals.length - 1 && (
-            <button className="peek peek-right" onClick={() => goTo(goalIdx + 1)} aria-label={`Next goal: ${goals[goalIdx + 1].title}`}>{miniBunch(goals[goalIdx + 1], GRAPE_SCALE * 0.55)}</button>
-          )}
-          {goals.length > 1 && goalView === 'stack' && goals.slice(goalIdx + 1, goalIdx + 3).map((g, k) => (
-            <button key={g.id} className={`stack-card back back-${k + 1}`} style={{ '--sc': colorOf(g.color).friend[0] }} onClick={() => goTo(goalIdx + 1 + k)} aria-label={`Goal: ${g.title}`} />
-          ))}
+        <div className="goal-stage" ref={stageRef}>
         <div key={goal.id} className={`stage-main ${dir > 0 ? 'from-right' : dir < 0 ? 'from-left' : ''}`}>
         <GrapeCluster
           target={total}
@@ -291,6 +303,7 @@ export default function Room({ api, user, id }) {
           maxWidth={grapeMaxWidth(36)}
           key={goal.id}
           apiRef={bunchApi}
+          noEntry={zoomed}
           slotted
           dimFilled={!!placing}
           hotSlot={hot}
@@ -305,8 +318,14 @@ export default function Room({ api, user, id }) {
         </div>
         </div>
         {goals.length > 1 && (
-          <div className="page-dots" aria-hidden>
-            {goals.map((g, i) => <i key={g.id} className={i === goalIdx ? 'on' : ''} style={{ background: i === goalIdx ? colorOf(g.color).me[1] : undefined }} />)}
+          <div className="other-goals">
+            {goals.map((g, i) => i === goalIdx ? null : (
+              <button key={g.id} className="other-goal" onClick={(e) => goTo(i, e.currentTarget.querySelector('svg')?.getBoundingClientRect())}>
+                {miniBunch(g, GRAPE_SCALE * 0.26)}
+                <span className="other-goal-title">{g.title}</span>
+                <span className="other-goal-count">{teamCountOf(g)}</span>
+              </button>
+            ))}
           </div>
         )}
         {total > 0 && (done >= total || !isCurrent) && (
@@ -399,9 +418,6 @@ export default function Room({ api, user, id }) {
           room={room}
           isOwner={isHostOf(room, user.uid)}
           me={user.uid}
-          goalView={goalView}
-          setGoalView={setGoalView}
-          multi={goals.length > 1}
           onCopyCode={() => copy(id, 'Code copied')}
           onCopyLink={() => copy(inviteUrl, 'Link copied')}
           onShare={share}
@@ -450,7 +466,7 @@ export default function Room({ api, user, id }) {
 }
 
 // 방 설정: 방장은 방 이름과 골을 바꿀 수 있고, 다른 멤버는 보기만
-function SettingsSheet({ api, room, isOwner, me, goalView, setGoalView, multi, onCopyCode, onCopyLink, onShare, onClose }) {
+function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare, onClose }) {
   const [name, setName] = useState(room.name)
   const [goals, setGoals] = useState(() => goalsOf(room).map((g) => ({ ...g })))
   const [hosts, setHosts] = useState(() => hostsOf(room))
@@ -489,16 +505,6 @@ function SettingsSheet({ api, room, isOwner, me, goalView, setGoalView, multi, o
           <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
         </div>
       </section>
-      {multi && (
-        <div className="account-row view-row">
-          <span className="mono muted">goal view</span>
-          <div className="seg" role="group" aria-label="Goal view">
-            {[['peek', 'peek'], ['stack', 'stack']].map(([v, l]) => (
-              <button type="button" key={v} className={goalView === v ? 'on' : ''} onClick={() => setGoalView(v)}>{l}</button>
-            ))}
-          </div>
-        </div>
-      )}
       <form className="form" onSubmit={save}>
         <label>room name
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} required disabled={!isOwner} />
