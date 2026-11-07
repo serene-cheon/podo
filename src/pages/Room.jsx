@@ -57,13 +57,15 @@ export default function Room({ api, user, id }) {
   // 골 넘기기: 지금 포도알들이 + 로 빨려 들어간 뒤 → 새 골 포도알들이 + 에서 튀어나옴
   const bunchApi = useRef(null)
   const switching = useRef(false)
-  async function goTo(i) {
+  // 여러 골 보기 방식 (이 기기에 저장): peek = 옆 송이가 살짝 보임, stack = 카드처럼 겹쳐 쌓기
+  const [goalView, setGoalViewState] = useState(() => { try { return localStorage.getItem('podo-goal-view') || 'peek' } catch { return 'peek' } })
+  const setGoalView = (v) => { setGoalViewState(v); try { localStorage.setItem('podo-goal-view', v) } catch { /* 무시 */ } }
+  const [dir, setDir] = useState(0) // 넘긴 방향 (애니메이션용)
+  function goTo(i) {
     if (i < 0 || i >= goals.length || i === goalIdx || switching.current) return
-    switching.current = true
-    try { await bunchApi.current?.collapse() } finally {
-      setGoalPick(goals[i].id)
-      switching.current = false
-    }
+    setDir(i > goalIdx ? 1 : -1)
+    setGoalPick(goals[i].id)
+    navigator.vibrate?.(8)
   }
   // 포도송이를 좌우로 밀면 다음/이전 골
   const swipe = useRef(null)
@@ -97,6 +99,13 @@ export default function Room({ api, user, id }) {
   }, [data, week, goals])
   const byUser = byGoal[goal.id] || {}
   const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, tOf(user.uid, g))
+  // 다른 골의 팀 송이 (옆 송이 / 뒤 카드에 작게)
+  const miniBunch = (g, size) => {
+    const by = byGoal[g.id] || {}
+    const tot = members.reduce((acc, m) => acc + targetFor(room, g, m.uid), 0)
+    const filled = members.flatMap((m) => (by[m.uid] || []).slice(0, targetFor(room, g, m.uid))).sort((a, b) => a.createdAt - b.createdAt)
+    return <GrapeCluster key={g.id} target={tot} color={g.color} checkins={filled} size={size} slotted meUid={user.uid} />
+  }
 
   const total = members.reduce((s, m) => s + tOf(m.uid), 0)
   const done = members.reduce((s, m) => s + Math.min(byUser[m.uid]?.length || 0, tOf(m.uid)), 0)
@@ -223,15 +232,7 @@ export default function Room({ api, user, id }) {
         <button className="settings-btn" onClick={() => setSettingsOpen(true)} aria-label="Room settings"><GearIcon /></button>
       </header>
 
-      {goals.length > 1 ? (
-        <nav className="goal-tabs" aria-label="Goals">
-          {goals.map((g, i) => (
-            <button key={g.id} className={`goal-tab ${g.id === goal.id ? 'on' : ''}`} onClick={() => goTo(i)} style={{ '--gc': colorOf(g.color).me[1] }}>
-              <i />{g.title}
-            </button>
-          ))}
-        </nav>
-      ) : !isPersonal(goal) && (
+      {!isPersonal(goal) && (
         <button className="my-goal our" onClick={() => isHostOf(room, user.uid) && setSettingsOpen(true)} disabled={!isHostOf(room, user.uid)}>
           <span className="mono muted">our goal</span>
           <b>{goal.title}</b>
@@ -265,14 +266,23 @@ export default function Room({ api, user, id }) {
         <div className="my-bunch-head">
           <div>
             <h2>{done >= total ? 'Team podo is complete!' : 'Team podo'}</h2>
-            {goals.length > 1 && <p className="mono" style={{ color: gc.ink }}>{goal.title}</p>}
           </div>
           <div className="counts">
             <span><small>team</small><b>{done}</b>/{total}</span>
             <span className="me"><small>me</small><b>{myDone}</b>/{target}</span>
           </div>
         </div>
-        <div key={goal.id}>
+        <div className={`goal-stage view-${goals.length > 1 ? goalView : 'single'}`}>
+          {goals.length > 1 && goalView === 'peek' && goalIdx > 0 && (
+            <button className="peek peek-left" onClick={() => goTo(goalIdx - 1)} aria-label={`Previous goal: ${goals[goalIdx - 1].title}`}>{miniBunch(goals[goalIdx - 1], GRAPE_SCALE * 0.55)}</button>
+          )}
+          {goals.length > 1 && goalView === 'peek' && goalIdx < goals.length - 1 && (
+            <button className="peek peek-right" onClick={() => goTo(goalIdx + 1)} aria-label={`Next goal: ${goals[goalIdx + 1].title}`}>{miniBunch(goals[goalIdx + 1], GRAPE_SCALE * 0.55)}</button>
+          )}
+          {goals.length > 1 && goalView === 'stack' && goals.slice(goalIdx + 1, goalIdx + 3).map((g, k) => (
+            <button key={g.id} className={`stack-card back back-${k + 1}`} style={{ '--sc': colorOf(g.color).friend[0] }} onClick={() => goTo(goalIdx + 1 + k)} aria-label={`Goal: ${g.title}`} />
+          ))}
+        <div key={goal.id} className={`stage-main ${dir > 0 ? 'from-right' : dir < 0 ? 'from-left' : ''}`}>
         <GrapeCluster
           target={total}
           color={goal.color}
@@ -292,6 +302,7 @@ export default function Room({ api, user, id }) {
           onPressEnd={pressEnd}
           hiddenId={bloom?.c.id}
         />
+        </div>
         </div>
         {goals.length > 1 && (
           <div className="page-dots" aria-hidden>
@@ -388,6 +399,9 @@ export default function Room({ api, user, id }) {
           room={room}
           isOwner={isHostOf(room, user.uid)}
           me={user.uid}
+          goalView={goalView}
+          setGoalView={setGoalView}
+          multi={goals.length > 1}
           onCopyCode={() => copy(id, 'Code copied')}
           onCopyLink={() => copy(inviteUrl, 'Link copied')}
           onShare={share}
@@ -436,7 +450,7 @@ export default function Room({ api, user, id }) {
 }
 
 // 방 설정: 방장은 방 이름과 골을 바꿀 수 있고, 다른 멤버는 보기만
-function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare, onClose }) {
+function SettingsSheet({ api, room, isOwner, me, goalView, setGoalView, multi, onCopyCode, onCopyLink, onShare, onClose }) {
   const [name, setName] = useState(room.name)
   const [goals, setGoals] = useState(() => goalsOf(room).map((g) => ({ ...g })))
   const [hosts, setHosts] = useState(() => hostsOf(room))
@@ -475,6 +489,16 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
           <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
         </div>
       </section>
+      {multi && (
+        <div className="account-row view-row">
+          <span className="mono muted">goal view</span>
+          <div className="seg" role="group" aria-label="Goal view">
+            {[['peek', 'peek'], ['stack', 'stack']].map(([v, l]) => (
+              <button type="button" key={v} className={goalView === v ? 'on' : ''} onClick={() => setGoalView(v)}>{l}</button>
+            ))}
+          </div>
+        </div>
+      )}
       <form className="form" onSubmit={save}>
         <label>room name
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} required disabled={!isOwner} />

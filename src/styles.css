@@ -502,3 +502,29 @@ button.member:active { background: var(--grape-soft); }
 .add-menu button:active { background: var(--grape-soft); }
 @keyframes menuin { from { opacity: 0; transform: scale(.92) translateY(-4px); } }
 .top-actions { display: flex; align-items: center; gap: 6px; }
+
+/* ── 여러 골: peek / stack ── */
+.goal-stage { position: relative; width: 100%; display: flex; justify-content: center; }
+.stage-main { position: relative; z-index: 2; display: flex; justify-content: center; }
+.stage-main.from-right { animation: stageR .42s cubic-bezier(.32,.72,0,1); }
+.stage-main.from-left { animation: stageL .42s cubic-bezier(.32,.72,0,1); }
+@keyframes stageR { from { transform: translateX(60px); opacity: 0; } }
+@keyframes stageL { from { transform: translateX(-60px); opacity: 0; } }
+
+/* peek: 양옆에 작고 흐린 송이 */
+.view-peek { overflow: clip; margin: 0 -18px; width: calc(100% + 36px); padding: 0 18px; }
+.peek { position: absolute; top: 50%; z-index: 1; border: 0; background: none; padding: 0; opacity: .45; filter: saturate(.85); transition: opacity .2s; }
+.peek:active { opacity: .6; }
+.peek-left { left: 0; transform: translate(-42%, -50%); }
+.peek-right { right: 0; transform: translate(42%, -50%); }
+html, body { overflow-x: clip; }
+
+/* stack: 유리 카드 위 송이, 뒤에 겹친 카드 */
+.view-stack { padding: 6px 0 40px; }
+.view-stack .stage-main { background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 30px; padding: 18px 10px 22px; width: 100%; box-shadow: 0 10px 30px rgba(40,20,70,.08); }
+.stack-card { position: absolute; left: 0; right: 0; top: 6px; bottom: 40px; background-image: linear-gradient(to top, var(--sc, transparent) 0, transparent 34px) !important; border: 1px solid var(--line); border-radius: 30px; background: rgba(250,249,252,.9); padding: 0; }
+.stack-card.back-1 { transform: translateY(14px) scale(.94); transform-origin: bottom center; z-index: 1; }
+.stack-card.back-2 { transform: translateY(28px) scale(.88); transform-origin: bottom center; z-index: 0; opacity: .75; }
+.view-stack .stage-main.from-right, .view-stack .stage-main.from-left { animation: stackIn .45s cubic-bezier(.32,.72,0,1); }
+@keyframes stackIn { from { transform: translateY(12px) scale(.95); opacity: .6; } }
+.view-row { margin-bottom: 14px; }
