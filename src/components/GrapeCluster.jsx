@@ -405,8 +405,8 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
                 <g className="slot">
                   <rect
                     x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} rx={p.r * SQ}
-                    fill={isHot ? colorOf(color).friend[0] : `url(#frost${gid})`}
-                    stroke={isHot ? colorOf(color).me[1] : '#fff'} strokeWidth={isHot ? 2 : 1.2} strokeOpacity={isHot ? 1 : 0.9}
+                    fill={isHot ? colorOf(color).friend[0] : '#ECEBEF'}
+                    stroke={isHot ? colorOf(color).me[1] : 'none'} strokeWidth="2"
                   />
                 </g>
               ) : (
