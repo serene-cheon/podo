@@ -8,12 +8,12 @@ const R = 20
 const DX = R * 2 + 4
 const DY = R * 1.8 + 2
 const TOP = 46
-// 포도알 실제 크기 (아이폰 16/17, 393pt 기준): 62 × 62, 모서리 25, 칸 간격 9
-export const GRAPE_PX = 62
+// 포도알 실제 크기 (아이폰 16/17, 393pt 기준): 68 × 68, 모서리 27, 칸 간격 8
+export const GRAPE_PX = 68
 export const GRAPE_SCALE = GRAPE_PX / (R * 2) // SVG 단위 → 화면 px
-export const SQ = 25 / (GRAPE_PX / 2) // 모서리 반지름 / 포도알 반지름
-const GAP_M = 9 / GRAPE_SCALE // 칸 사이 9px
-const PAD = 2.5 // 송이 좌우 여백 (SVG 단위)
+export const SQ = 27 / (GRAPE_PX / 2) // 모서리 반지름 / 포도알 반지름
+const GAP_M = 8 / GRAPE_SCALE // 칸 사이 8px
+const PAD = 1 // 송이 좌우 여백 (SVG 단위, 그림자는 밖으로 보임)
 // 송이를 정확한 크기로 그리려면: size={GRAPE_SCALE}, maxWidth={grapeMaxWidth()} (좁은 화면에서만 줄어듦)
 export const grapeMaxWidth = (inset = 68) => Math.min(window.innerWidth, 480) - inset
 
@@ -108,9 +108,23 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const { color: col, isMine } = infoOf(c)
     onPressStart?.(c, rect, col, isMine)
   }
+  // 누른 채 옆으로 끌면: 손가락이 지나가는 채워진 포도알이 차례로 커져요 (떼면 마지막 알이 펼쳐짐)
   const movePress = (e) => {
     const s0 = pressRef.current
-    if (s0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 12) cancelPress()
+    if (!s0) return
+    let hit = null
+    flyRefs.current.forEach((el, k) => {
+      if (!el || !slots[k]) return
+      const r = el.getBoundingClientRect()
+      if (e.clientX >= r.left - 3 && e.clientX <= r.right + 3 && e.clientY >= r.top - 3 && e.clientY <= r.bottom + 3) hit = k
+    })
+    if (hit === null || hit === s0.i) return
+    s0.i = hit
+    setPressed(hit)
+    navigator.vibrate?.(6)
+    const c = slots[hit]
+    const { color: col, isMine } = infoOf(c)
+    onPressStart?.(c, flyRefs.current[hit].getBoundingClientRect(), col, isMine)
   }
   const cancelPress = () => {
     if (!pressRef.current) return
@@ -118,9 +132,9 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     setPressed(null)
     onPressEnd?.(false)
   }
-  const endPress = (i) => {
+  const endPress = () => {
     const s0 = pressRef.current
-    if (s0?.i !== i) return
+    if (!s0) return
     pressRef.current = null
     // 짧게 톡 탭해도 둥근 네모로 커지는 게 보이도록 살짝 기다렸다가 펼치기
     const wait = Math.max(0, 260 - (performance.now() - s0.t))
@@ -222,12 +236,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
               <image href={c.mediaUrl} x={-p.r} y={-p.r} width={p.r * 2} height={p.r * 2} preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${i}${gid})`} />
             </>
           )}
-          {/* 친구 알에만 이름 첫 글자 (내 알은 진한 색으로 구분) */}
-          {!photo && team && other && (
-            <text y="4" textAnchor="middle" fontFamily="Inter Tight, -apple-system, Helvetica, Arial, sans-serif" fontSize="11" fontWeight="600" letterSpacing=".06em" fill={col.label}>
-              {[...(labelOf?.(c.uid) || '?')][0].toUpperCase()}
-            </text>
-          )}
+          {/* 글씨 없이 색으로만: 내 알은 진하게, 친구 알은 연하게 */}
           {c?.mediaType === 'video' && <path d="M-4 -6 L7 0 L-4 6 Z" fill="#fff" opacity=".95" transform={team ? 'translate(0 9) scale(.6)' : undefined} />}
         </g>
       )
@@ -331,7 +340,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
           onPointerDown: (e) => { try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* Safari 등 */ } startPress(i, c, e) },
           onPointerMove: movePress,
           onPointerCancel: cancelPress,
-          onPointerUp: () => endPress(i),
+          onPointerUp: endPress,
         } : {}
         return (
           <g

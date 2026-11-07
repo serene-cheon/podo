@@ -18,11 +18,12 @@ function boxes(rect, tall, square) {
   const cy = rect.top + rect.height / 2
   const d = Math.min(rect.width, rect.height)
   const grape = { x: cx - d / 2, y: cy - d / 2, w: d, h: d, r: square ? (d / 2) * SQ : d / 2 }
-  const s = Math.min(Math.max(d * 2, 108), 156)
+  // 누르면 원래 크기의 약 2.1배, 모서리는 20px 정도 (덜 둥글게)
+  const s = Math.min(Math.max(d * 2.1, 108), 160)
   const press = {
     x: Math.min(Math.max(cx - s / 2, 10), vw - s - 10),
     y: Math.min(Math.max(cy - s / 2, 10), vh - s - 10),
-    w: s, h: s, r: s * 0.3,
+    w: s, h: s, r: Math.round(s * 0.145),
   }
   const w = Math.min(vw - 24, 440)
   const h = tall ? Math.min(vh - 130, w * 1.3) : Math.min(w, vh - 130)
@@ -72,9 +73,7 @@ export default function Bloom({ item, phase, member, goal, canRemove, onRemove, 
   }, [target, onClose])
 
   const wash = isMine ? color?.me : color?.friend
-  const bg = wash
-    ? `radial-gradient(circle at 34% 28%, #ffffff66, transparent 32%), radial-gradient(120% 120% at 35% 30%, ${wash[0]}, ${wash[1]})`
-    : 'var(--grape-soft)'
+  const bg = wash ? wash[1] : 'var(--grape-soft)' // 포도알과 같은 단색
 
   return (
     <div className={`bloom bloom-${shown}`} onClick={target === 'open' ? onClose : undefined}>
@@ -84,7 +83,6 @@ export default function Bloom({ item, phase, member, goal, canRemove, onRemove, 
           ? <video src={c.mediaUrl} autoPlay loop playsInline muted />
           : <img src={c.mediaUrl} alt="" draggable={false} />)}
         {!hasMedia && c.note && <p className={`bloom-note ${c.note.length > 30 ? 'long' : ''}`}>{c.note}</p>}
-        {!hasMedia && !c.note && <span className="bloom-dot" />}
         <div className={`bloom-info ${hasMedia ? 'on-media' : ''}`}>
           {hasMedia && c.note && <p className="bloom-note-sm">{c.note}</p>}
           <div className="pv-meta">

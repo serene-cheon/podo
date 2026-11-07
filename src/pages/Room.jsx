@@ -70,7 +70,7 @@ export default function Room({ api, user, id }) {
   const onPointerUp = (e) => {
     const s0 = swipe.current
     swipe.current = null
-    if (!s0 || goals.length < 2) return
+    if (!s0 || goals.length < 2 || bloom) return // 포도알을 누르고 끄는 중이면 골 넘기기 X
     const dx = e.clientX - s0.x
     const dy = e.clientY - s0.y
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goTo(goalIdx + (dx < 0 ? 1 : -1))
@@ -253,7 +253,7 @@ export default function Room({ api, user, id }) {
           color={goal.color}
           checkins={teamFilled}
           size={GRAPE_SCALE}
-          maxWidth={grapeMaxWidth(36)}
+          maxWidth={grapeMaxWidth(16)}
           key={goal.id}
           apiRef={bunchApi}
           slotted

@@ -432,3 +432,7 @@ button.member:active { background: var(--grape-soft); }
 .team-bunch.complete { box-shadow: none; }
 /* 점 그리드 없이 깨끗한 흰 배경 */
 [data-theme="modern"] body, body { background: #FFFFFF; background-image: none; }
+
+/* 송이는 화면 폭을 조금 더 써서 68px 포도알 5칸이 들어가게 */
+.room .team-bunch { margin-left: -10px; margin-right: -10px; }
+.room .team-bunch .my-bunch-head { padding: 0 10px; }
