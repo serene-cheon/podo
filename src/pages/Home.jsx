@@ -5,10 +5,11 @@ import Sheet from '../components/Sheet.jsx'
 import { toast } from '../components/Toast.jsx'
 import { normalizeCode } from '../lib/code.js'
 import { isDemo, BUILD } from '../lib/api.js'
-import { weekKey, weekLabel, daysLeft, weekStart } from '../lib/week.js'
+import { weekKey, weekLabel, daysLeft } from '../lib/week.js'
 import { SproutDoodle } from '../components/Doodle.jsx'
 import GoalsEditor from '../components/GoalsEditor.jsx'
 import GrapeLoader from '../components/GrapeLoader.jsx'
+import Bloom from '../components/Bloom.jsx'
 import { goalsOf, goalIdOf, cleanGoals, newGoalId } from '../lib/goals.js'
 
 export default function Home({ api, user }) {
@@ -70,7 +71,7 @@ export default function Home({ api, user }) {
 // 방마다 이번 주 내 체크인을 구독해서 위로 올려줌 (화면에는 안 보임)
 function MyCheckinsWatcher({ api, user, roomId, onMine }) {
   useEffect(() => api.watchCheckins(roomId, weekKey(), (list) =>
-    onMine(roomId, list.filter((c) => c.uid === user.uid))), [api, user.uid, roomId, onMine])
+    onMine(roomId, list.filter((c) => c.uid === user.uid).map((c) => ({ ...c, roomId })))), [api, user.uid, roomId, onMine])
   return null
 }
 
@@ -93,85 +94,44 @@ function MyBunch({ api, user, rooms }) {
   const doneGoals = allGoals.filter((x) => mineOf(x).length >= x.goal.target).length
   const left = daysLeft(week)
   const complete = total > 0 && filled.length >= total
+  // 누르면 커지고, 떼면 펼쳐지는 포도알 (방 화면과 같은 인터랙션)
+  const [bloom, setBloom] = useState(null)
+  const goalOf = (c) => allGoals.find((x) => x.room.id === c.roomId && goalIdOf(c, goalsOf(x.room)) === x.goal.id)
+  const pressStart = (c, rect, color) => setBloom({ c, rect, color, isMine: true, phase: 'press' })
+  const pressEnd = (open) => setBloom((b) => b && { ...b, phase: open ? 'open' : 'cancel' })
   return (
-    <section className={`my-bunch ${complete ? 'complete' : ''}`}>
+    <section className={`my-bunch home-bunch ${complete ? 'complete' : ''}`}>
       {rooms.map((r) => <MyCheckinsWatcher key={r.id} api={api} user={user} roomId={r.id} onMine={onMine} />)}
       <div className="my-bunch-head">
         <h2>{complete ? 'My podo is complete!' : 'My podo'}</h2>
-        <span className="mono muted">{weekLabel(week).toLowerCase()}</span>
+        <p className="big-count small"><b>{filled.length}</b><span>/{total}</span></p>
       </div>
-      <GrapeCluster target={total} checkins={filled} size={GRAPE_SCALE} maxWidth={grapeMaxWidth()} colorOfCheckin={(c) => colorById[c.id] ?? 0} />
-      <p className="big-count"><b>{filled.length}</b><span>/{total}</span></p>
+      <GrapeCluster
+        target={total}
+        checkins={filled}
+        size={GRAPE_SCALE}
+        maxWidth={grapeMaxWidth(16)}
+        colorOfCheckin={(c) => colorById[c.id] ?? 0}
+        onPressStart={pressStart}
+        onPressEnd={pressEnd}
+        hiddenId={bloom?.c.id}
+      />
       <p className="mono muted">
-        {doneGoals} of {allGoals.length} {allGoals.length === 1 ? 'goal' : 'goals'} done
+        {weekLabel(week).toLowerCase()} · {doneGoals} of {allGoals.length} {allGoals.length === 1 ? 'goal' : 'goals'} done
         {!complete && ` · ${left} day${left === 1 ? '' : 's'} left`}
       </p>
-      <WeekDots checkins={filled} />
+      {bloom && (
+        <Bloom
+          key={bloom.c.id}
+          item={bloom}
+          phase={bloom.phase}
+          goal={goalOf(bloom.c) ? `${goalOf(bloom.c).room.name} · ${goalOf(bloom.c).goal.title}` : null}
+          member={{ name: user.name, photo: user.photo }}
+          onClose={() => setBloom((b) => b && { ...b, phase: 'closing' })}
+          onDone={() => setBloom(null)}
+        />
+      )}
     </section>
-  )
-}
-
-// every day counts: 이번 주 요일마다 포도알을 붙였는지 점으로
-function WeekDots({ checkins }) {
-  const start = weekStart().getTime()
-  const today = Math.floor((Date.now() - start) / 86400000)
-  const days = new Set(checkins.map((c) => Math.floor((c.createdAt - start) / 86400000)))
-  return (
-    <div className="week-dots">
-      <div className="dots">
-        {['m', 't', 'w', 't', 'f', 's', 's'].map((d, i) => (
-          <span key={i} className={`${days.has(i) ? 'on' : ''} ${i === today ? 'today' : ''}`}>
-            <i />
-            <small>{d}</small>
-          </span>
-        ))}
-      </div>
-      <p className="mono muted">every day counts</p>
-    </div>
-  )
-}
-
-// 프로필: 계정 정보 + 닉네임 변경 + 로그아웃
-function ProfileSheet({ api, user, onClose }) {
-  const [name, setName] = useState(user.name)
-  const [busy, setBusy] = useState(false)
-  const trimmed = name.trim()
-  async function save(e) {
-    e.preventDefault()
-    if (!trimmed || trimmed === user.name) return onClose()
-    setBusy(true)
-    try {
-      await api.updateName(user, trimmed)
-      toast('Nickname saved')
-      onClose()
-    } catch (err) {
-      toast('Could not save: ' + (err.message || err))
-      setBusy(false)
-    }
-  }
-  return (
-    <Sheet title="Profile" onClose={onClose}>
-      <form className="form" onSubmit={save}>
-        <div className="profile-head">
-          <Avatar name={trimmed || user.name} photo={user.photo} size={64} />
-          <div>
-            <b>{trimmed || user.name}</b>
-            <span className="mono muted">{user.email || 'no email'}</span>
-          </div>
-        </div>
-        <label>nickname
-          <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} required placeholder="what friends will see" />
-        </label>
-        <p className="mono muted small">shown on your grapes and in every room you're in</p>
-        <div className="account-row">
-          <span className="mono muted">account</span>
-          <span className="mono">{isDemo ? 'demo account' : 'signed in with Google'}</span>
-        </div>
-        <button className="btn primary block" disabled={busy || !trimmed}>{busy ? 'saving…' : 'save'}</button>
-        <button type="button" className="btn danger block" onClick={() => confirm('Sign out?') && api.signOut()}>sign out</button>
-        <p className="mono muted center build-tag">build {BUILD} UTC</p>
-      </form>
-    </Sheet>
   )
 }
 
