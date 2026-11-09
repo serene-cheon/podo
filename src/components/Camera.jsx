@@ -9,12 +9,15 @@ function pickVideoType() {
   return VIDEO_TYPES.find((t) => MediaRecorder.isTypeSupported?.(t)) || ''
 }
 
-function drawToJpeg(source, w, h) {
-  const scale = Math.min(1, MAX_SIDE / Math.max(w, h))
+// square: 가운데를 정사각형으로 잘라서 (포도알이 정사각형이라 화면에 보이던 그대로)
+function drawToJpeg(source, w, h, square) {
+  const sw = square ? Math.min(w, h) : w
+  const sh = square ? Math.min(w, h) : h
+  const scale = Math.min(1, MAX_SIDE / Math.max(sw, sh))
   const c = document.createElement('canvas')
-  c.width = Math.round(w * scale)
-  c.height = Math.round(h * scale)
-  c.getContext('2d').drawImage(source, 0, 0, c.width, c.height)
+  c.width = Math.round(sw * scale)
+  c.height = Math.round(sh * scale)
+  c.getContext('2d').drawImage(source, (w - sw) / 2, (h - sh) / 2, sw, sh, 0, 0, c.width, c.height)
   return new Promise((res) => c.toBlob(res, 'image/jpeg', 0.82))
 }
 
@@ -47,9 +50,14 @@ export default function Camera({ initialMode = 'photo', photoOnly, onDone, onClo
     let cancelled = false
     setReady(false)
     navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: facing, width: { ideal: 720 }, height: { ideal: 1280 } }, audio: false })
+      // 세로로 길게(720x1280) 요청하면 폰이 가로 영상을 잘라내서 확대돼 보였어요 → 센서 기본 비율(4:3) 그대로 받기
+      .getUserMedia({ video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1440 } }, audio: false })
       .then((s) => {
         if (cancelled) return s.getTracks().forEach((t) => t.stop())
+        // 줌을 지원하는 폰이면 가장 넓게 (기본 줌이 1보다 큰 경우가 있어요)
+        const track = s.getVideoTracks()[0]
+        const zoom = track?.getCapabilities?.().zoom
+        if (zoom && zoom.min !== undefined) track.applyConstraints({ advanced: [{ zoom: zoom.min }] }).catch(() => {})
         streamRef.current = s
         videoRef.current.srcObject = s // 첫 프레임이 오면 onLoadedData 에서 ready
       })
@@ -68,7 +76,7 @@ export default function Camera({ initialMode = 'photo', photoOnly, onDone, onClo
   async function takePhoto() {
     const v = videoRef.current
     if (!v?.videoWidth) return
-    setBlob(await drawToJpeg(v, v.videoWidth, v.videoHeight), 'photo')
+    setBlob(await drawToJpeg(v, v.videoWidth, v.videoHeight, photoOnly), 'photo')
   }
 
   function recordClip() {
@@ -98,7 +106,7 @@ export default function Camera({ initialMode = 'photo', photoOnly, onDone, onClo
     <div className="camera">
       <button className="cam-close" onClick={onClose} aria-label="Close">✕</button>
 
-      <div className="cam-stage">
+      <div className={`cam-stage ${photoOnly ? 'square' : ''}`}>
         {supported && !error && (
           <video ref={videoRef} autoPlay playsInline muted onLoadedData={() => setReady(true)} className={facing === 'user' ? 'mirror' : ''} hidden={!!result} />
         )}

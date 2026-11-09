@@ -522,3 +522,6 @@ html, body { overflow-x: clip; }
 @keyframes stick { 0% { transform: scale(1.18); } 35% { transform: scale(.9, 1.06); } 60% { transform: scale(1.04, .97); } 100% { transform: none; } }
 .grape .stick-ring { transform-box: fill-box; transform-origin: center; animation: ring .55s cubic-bezier(.2,.8,.3,1) forwards; pointer-events: none; }
 @keyframes ring { from { transform: scale(.9); opacity: .55; } to { transform: scale(1.45); opacity: 0; } }
+/* 사진 포도알: 정사각형 뷰파인더 (찍히는 범위 그대로) */
+.cam-stage.square { flex: 1; }
+.cam-stage.square > video, .cam-stage.square > img { width: calc(100% - 24px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 34px; }
