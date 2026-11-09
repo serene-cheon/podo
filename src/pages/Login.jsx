@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Logo from '../components/Logo.jsx'
 import { isDemo, BUILD } from '../lib/api.js'
 import { toast } from '../components/Toast.jsx'
 import { GrapeDoodle } from '../components/Doodle.jsx'
@@ -12,7 +13,7 @@ export default function Login({ api }) {
   return (
     <main className="login">
       <header className="login-top">
-        <span className="brand-hand">podoit</span>
+        <span className="brand-logo"><Logo height={30} /></span>
         <span className="mono">every day counts</span>
       </header>
       <h1 className="login-title">Set goals,<br />Fill grapes,<br /><span>Grow<br />together.</span></h1>

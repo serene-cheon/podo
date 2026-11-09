@@ -525,3 +525,7 @@ html, body { overflow-x: clip; }
 /* 사진 포도알: 정사각형 뷰파인더 (찍히는 범위 그대로) */
 .cam-stage.square { flex: 1; }
 .cam-stage.square > video, .cam-stage.square > img { width: calc(100% - 24px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 34px; }
+
+/* 워드마크 로고 (보라) */
+.brand-logo { display: inline-flex; align-items: center; margin: 0; line-height: 0; color: #6E48C9; }
+.brand-logo .logo { display: block; }

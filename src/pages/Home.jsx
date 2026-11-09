@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Logo from '../components/Logo.jsx'
 import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
@@ -22,7 +23,7 @@ export default function Home({ api, user }) {
   return (
     <main className="page">
       <header className="topbar">
-        <h1 className="brand-hand">podoit</h1>
+        <h1 className="brand-logo"><Logo height={28} /></h1>
         <div className="top-actions">
           <div className="add-menu-wrap">
             <button className={`add-room-btn ${menuOpen ? 'open' : ''}`} onClick={() => setMenuOpen((o) => !o)} aria-label="New room or join" aria-expanded={menuOpen}>
