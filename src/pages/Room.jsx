@@ -1,3 +1,4 @@
+import { haptic } from '../lib/haptics.js'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
@@ -15,7 +16,7 @@ import { goalsOf, goalIdOf, cleanGoals, goalFields, hostsOf, isHostOf, isPersona
 import GoalsEditor from '../components/GoalsEditor.jsx'
 import { colorOf } from '../lib/colors.js'
 
-const vibrate = (p) => navigator.vibrate?.(p)
+const vibrate = (p) => haptic(p)
 
 export default function Room({ api, user, id }) {
   const thisWeek = weekKey()
@@ -63,7 +64,7 @@ export default function Room({ api, user, id }) {
     if (i < 0 || i >= goals.length || i === goalIdx || switching.current) return
     setDir(i > goalIdx ? 1 : -1)
     setGoalPick(goals[i].id)
-    navigator.vibrate?.(8)
+    haptic('tick')
   }
   // 포도송이를 좌우로 밀면 다음/이전 골
   const swipe = useRef(null)
@@ -120,7 +121,7 @@ export default function Room({ api, user, id }) {
     const key = `${week}|${goal.id}`
     if (seen.current.key === key && seen.current.done < total && done >= total) {
       setParty(true)
-      vibrate([30, 60, 30, 60, 80])
+      haptic('success')
       setTimeout(() => setParty(false), 3500)
     }
     seen.current = { key, done }
@@ -131,7 +132,6 @@ export default function Room({ api, user, id }) {
     setBusy(true)
     try {
       await api.addCheckin(user, id, { week: thisWeek, goalId: goal.id, slot, blob, mediaType, note: (n || '').trim() })
-      vibrate(20)
       if (mine.length + 1 === target) toast(`You finished “${titleFor(room, goal, user.uid)}” this week 🍇`)
     } catch (e) {
       toast('Could not add: ' + (e.message || e))

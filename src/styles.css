@@ -177,7 +177,7 @@ input { font: inherit; }
 .cluster { overflow: visible; display: block; }
 .grape.tap { cursor: pointer; }
 .grape-label { font-family: var(--sans); font-size: 13px; font-weight: 500; pointer-events: none; }
-.grape .pop { animation: popin .42s cubic-bezier(.22,.8,.3,1) both; transform-box: fill-box; transform-origin: center; }
+.grape .pop { animation: stick .46s cubic-bezier(.32,.72,0,1) both; transform-box: fill-box; transform-origin: center; }
 .grape.tap:active { opacity: .8; }
 
 /* viewer: 포도알 → 네모 카드 */
@@ -519,3 +519,6 @@ button.member:active { background: var(--grape-soft); }
 .peek-right { right: 0; transform: translate(42%, -50%); }
 html, body { overflow-x: clip; }
 
+@keyframes stick { 0% { transform: scale(1.18); } 35% { transform: scale(.9, 1.06); } 60% { transform: scale(1.04, .97); } 100% { transform: none; } }
+.grape .stick-ring { transform-box: fill-box; transform-origin: center; animation: ring .55s cubic-bezier(.2,.8,.3,1) forwards; pointer-events: none; }
+@keyframes ring { from { transform: scale(.9); opacity: .55; } to { transform: scale(1.45); opacity: 0; } }

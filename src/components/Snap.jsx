@@ -1,3 +1,4 @@
+import { haptic } from '../lib/haptics.js'
 import { useEffect, useRef, useState } from 'react'
 import { SQ, GRAPE_PX } from './GrapeCluster.jsx'
 
@@ -65,7 +66,7 @@ export function PlaceGrape({ url, note, color, from, getSlots, onHot, onPlace, o
     try { e.currentTarget.setPointerCapture?.(e.pointerId) } catch { /* Safari 등 */ }
     drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y }
     setMode('drag')
-    navigator.vibrate?.(8)
+    haptic('grab')
   }
   const move = (e) => {
     if (!drag.current) return
@@ -77,7 +78,7 @@ export function PlaceGrape({ url, note, color, from, getSlots, onHot, onPlace, o
     if (hi !== hot.current) {
       hot.current = hi
       onHot(hi)
-      if (hi !== null) navigator.vibrate?.(6)
+      if (hi !== null) haptic('tick')
     }
   }
   const up = async () => {
@@ -89,7 +90,11 @@ export function PlaceGrape({ url, note, color, from, getSlots, onHot, onPlace, o
     setMode('snap')
     setSize(h.rect.width)
     setPos({ x: h.rect.left + h.rect.width / 2, y: h.rect.top + h.rect.height / 2 })
-    navigator.vibrate?.(16)
+    // 칸에 닿는 순간: 착! 진동 + 살짝 눌렸다 튀어오름
+    setTimeout(() => {
+      haptic('stick')
+      elRef.current?.animate?.([{ transform: 'scale(1)' }, { transform: 'scale(1.12, .9)' }, { transform: 'scale(.96, 1.04)' }, { transform: 'scale(1)' }], { duration: 260, easing: 'cubic-bezier(.32,.72,0,1)' })
+    }, 230)
     try { await onPlace(h.i) } catch { setMode('back'); setSize(SIZE); setPos(rest()); onHot(null); hot.current = null }
   }
 

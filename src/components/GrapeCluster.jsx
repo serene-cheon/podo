@@ -1,3 +1,4 @@
+import { haptic } from '../lib/haptics.js'
 import { Fragment, useEffect, useId, useRef, useState } from 'react'
 
 // 목표 횟수(1~7)별 포도송이 모양: 위에서부터 각 줄에 몇 알인지
@@ -115,7 +116,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const rect = e.currentTarget.getBoundingClientRect()
     pressRef.current = { i, x: e.clientX, y: e.clientY, t: performance.now() }
     setPressed(i)
-    navigator.vibrate?.(8)
+    haptic('press')
     const { color: col, isMine } = infoOf(c)
     onPressStart?.(c, rect, col, isMine)
   }
@@ -138,7 +139,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     if (hit === null || hit === s0.i) return
     s0.i = hit
     setPressed(hit)
-    navigator.vibrate?.(6)
+    haptic('tick')
     const c = slots[hit]
     const { color: col, isMine } = infoOf(c)
     onPressStart?.(c, flyRefs.current[hit].getBoundingClientRect(), col, isMine)
@@ -157,7 +158,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
     const wait = Math.max(0, 260 - (performance.now() - s0.t))
     setTimeout(() => {
       setPressed(null)
-      navigator.vibrate?.(14)
+      haptic('open')
       onPressEnd?.(true)
     }, wait)
   }
@@ -236,6 +237,7 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       return (
         <g className={!top && i in pops ? 'pop' : ''} style={{ animationDelay: `${pops[i] || 0}ms` }}>
           {/* 은은한 그림자 */}
+          {!top && i in pops && <rect {...box} className="stick-ring" fill="none" stroke={col.me[1]} strokeWidth="2.5" style={{ animationDelay: `${pops[i] || 0}ms` }} />}
           <rect {...box} x={-p.r + 2} y={-p.r + 3} width={p.r * 2 - 4} height={p.r * 2 - 4} fill={col.me[1]} opacity={other ? 0.08 : 0.16} filter={`url(#aura${gid})`} />
           <clipPath id={`c${i}${gid}`}><rect {...box} /></clipPath>
           <g clipPath={`url(#c${i}${gid})`}>
