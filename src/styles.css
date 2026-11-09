@@ -529,3 +529,5 @@ html, body { overflow-x: clip; }
 /* 워드마크 로고 (보라) */
 .brand-logo { display: inline-flex; align-items: center; margin: 0; line-height: 0; color: #6E48C9; }
 .brand-logo .logo { display: block; }
+.logo-podo { fill: #6E48C9; }
+.logo-it { fill: #D4C6F5; }
