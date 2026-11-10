@@ -259,12 +259,8 @@ export default function Room({ api, user, id }) {
       <nav className="week-nav">
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="Previous week">‹</button>
         <span className="week-now">
-          {isCurrent && (
-            <span className="today-dot" aria-label={`Today, ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}`}>
-              <small>{new Date().toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}</small>{new Date().getDate()}
-            </span>
-          )}
           <span className="week-range">{weekLabel(week)}</span>
+          {isCurrent && <span className="week-today">TODAY · {new Date().toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()} {new Date().getDate()}</span>}
         </span>
         <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, 1))} disabled={isCurrent} aria-label="Next week">›</button>
       </nav>

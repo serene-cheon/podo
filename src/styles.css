@@ -566,10 +566,9 @@ html, body { overflow-x: clip; }
 .camera .cam-controls .btn.ghost.light, [data-theme="modern"] .camera .cam-controls .btn.ghost.light { background: rgba(255,255,255,.16); color: #fff; border: 0; }
 .camera .cam-controls .btn.primary, [data-theme="modern"] .camera .cam-controls .btn.primary { background: #7F5FCF; color: #fff; border: 0; }
 
-/* 주간 표시: 오늘 날짜 동그라미 + 주간 */
-.week-now { display: inline-flex; align-items: center; gap: 12px; min-height: 40px; }
-.today-dot { width: 40px; height: 40px; border-radius: 50%; background: #EFE9FB; color: #7F5FCF; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; line-height: 1; }
-.today-dot small { font-size: 8px; letter-spacing: .08em; opacity: .85; margin-bottom: 1px; }
-.week-range { font-size: 15px; font-weight: 500; letter-spacing: -.01em; color: var(--ink); }
+/* 주간 표시: 주간 + 아래 작은 오늘 날짜 */
+.week-now { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 140px; }
+.week-range { font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
+.week-today { font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #7F5FCF; }
 .week-nav .icon-btn { color: #6E6977; }
 .week-nav .icon-btn:disabled { color: #D3CFD9; opacity: 1; }
