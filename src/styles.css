@@ -569,6 +569,7 @@ html, body { overflow-x: clip; }
 /* 주간 표시: 주간 + 아래 작은 오늘 날짜 */
 .week-now { display: inline-flex; flex-direction: column; align-items: center; gap: 4px; min-width: 140px; }
 .week-range { font-size: 17px; font-weight: 600; letter-spacing: -.01em; color: var(--ink); }
-.week-today { font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #7F5FCF; }
+.week-today { font-size: 11px; letter-spacing: .1em; font-weight: 600; color: #7F5FCF; line-height: 14px; }
+.week-today.back { border: 0; background: none; padding: 0; color: #9A95A3; font-family: inherit; }
 .week-nav .icon-btn { color: #6E6977; }
 .week-nav .icon-btn:disabled { color: #D3CFD9; opacity: 1; }
