@@ -561,3 +561,7 @@ html, body { overflow-x: clip; }
 .scan-frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 28px; }
 .scan-frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 28px; }
 .scan-text { text-align: center; font-size: 15px; padding: 18px 20px 6px; color: rgba(255,255,255,.9); }
+
+/* 카메라 미리보기 버튼: 검은 배경에서 잘 보이게 */
+.camera .cam-controls .btn.ghost.light, [data-theme="modern"] .camera .cam-controls .btn.ghost.light { background: rgba(255,255,255,.16); color: #fff; border: 0; }
+.camera .cam-controls .btn.primary, [data-theme="modern"] .camera .cam-controls .btn.primary { background: #7F5FCF; color: #fff; border: 0; }
