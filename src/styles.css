@@ -137,6 +137,7 @@ input { font: inherit; }
 /* join */
 .join-card { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; max-width: 340px; }
 .join-card h1 { font-size: 34px; font-weight: 500; letter-spacing: -.03em; }
+.join-card .invited { font-size: 15px; }
 
 /* room */
 .goal-line { text-align: center; font-size: 17px; }

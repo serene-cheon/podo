@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { toast } from '../components/Toast.jsx'
 import Avatar from '../components/Avatar.jsx'
 import { SproutDoodle } from '../components/Doodle.jsx'
-import { goalsOf } from '../lib/goals.js'
 import GrapeLoader from '../components/GrapeLoader.jsx'
 
 const MAX_MEMBERS = 20
@@ -32,13 +31,8 @@ export default function Join({ api, user, id }) {
       )}
       {room && (
         <div className="join-card">
-          <p className="mono muted">you're invited to</p>
+          <p className="invited muted">You're invited to</p>
           <h1>{room.name}</h1>
-          <div className="goal-list">
-            {goalsOf(room).map((g) => (
-              <p key={g.id} className="goal-line"><span className="mono muted">goal</span> {g.title}</p>
-            ))}
-          </div>
           <div className="stack big">
             {room.memberIds.map((m) => <Avatar key={m} {...room.members[m]} size={36} />)}
           </div>
