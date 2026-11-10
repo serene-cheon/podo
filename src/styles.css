@@ -121,7 +121,7 @@ input { font: inherit; }
 /* sheet */
 .backdrop { position: fixed; inset: 0; background: rgba(23,21,28,.3); display: flex; align-items: flex-end; justify-content: center; z-index: 20; animation: fade .2s; }
 .sheet { background: var(--card); width: 100%; max-width: 480px; border-radius: 26px 26px 0 0; padding: 10px 20px calc(env(safe-area-inset-bottom) + 22px); animation: up .25s cubic-bezier(.2,.9,.3,1.1); }
-.sheet h2 { font-size: 24px; margin: 8px 0 16px; }
+.sheet h2 { font-size: 18px; font-weight: 600; margin: 6px 0 14px; }
 .sheet-handle { width: 40px; height: 5px; border-radius: 5px; background: var(--line); margin: 0 auto 6px; }
 .sheet-grab { touch-action: none; cursor: grab; margin: -10px -20px 0; padding: 10px 20px 0; user-select: none; -webkit-user-select: none; }
 .sheet-grab:active { cursor: grabbing; }
@@ -538,3 +538,14 @@ html, body { overflow-x: clip; }
 .danger-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
 .danger-actions .btn { padding: 12px 10px; }
 .btn.danger-solid { background: var(--danger); color: #fff; border: 0; }
+
+/* 방 상단: 오른쪽 아이콘 두 개 (제목은 가운데 유지) */
+.room .topbar > .icon-btn, .room .topbar > .top-right { flex: 0 0 88px; }
+.room .topbar > .icon-btn { justify-content: flex-start; }
+.top-right { display: flex; justify-content: flex-end; gap: 8px; }
+.top-right .settings-btn[aria-label="Invite friends"]:active { transform: scale(.92); }
+/* 초대 시트 */
+.invite-sheet { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 4px 0 6px; text-align: center; }
+.invite-sheet .invite-code { display: inline-flex; align-items: center; gap: 10px; font-size: 24px; letter-spacing: 5px; padding: 12px 18px; border-radius: 16px; }
+.invite-sheet .invite-code svg { color: var(--muted); }
+.invite-sheet .invite-actions { width: 100%; }

@@ -33,6 +33,7 @@ export default function Room({ api, user, id }) {
   const openFrom = (c, rect, colorIdx) => setBloom({ c, rect, color: colorOf(colorIdx), isMine: c.uid === user.uid, phase: 'open' })
   const [party, setParty] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [myGoalOpen, setMyGoalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const bunchRef = useRef(null)
@@ -231,7 +232,10 @@ export default function Room({ api, user, id }) {
       <header className="topbar">
         <a className="icon-btn" href="#/" aria-label="Back">←</a>
         <h1 className="title">{room.name}</h1>
-        <button className="settings-btn" onClick={() => setSettingsOpen(true)} aria-label="Room settings"><GearIcon /></button>
+        <div className="top-right">
+          <button className="settings-btn" onClick={() => setInviteOpen(true)} aria-label="Invite friends"><InviteIcon /></button>
+          <button className="settings-btn" onClick={() => setSettingsOpen(true)} aria-label="Room settings"><GearIcon /></button>
+        </div>
       </header>
 
       {!isPersonal(goal) && (
@@ -396,11 +400,21 @@ export default function Room({ api, user, id }) {
           room={room}
           isOwner={isHostOf(room, user.uid)}
           me={user.uid}
-          onCopyCode={() => copy(id, 'Code copied')}
-          onCopyLink={() => copy(inviteUrl, 'Link copied')}
-          onShare={share}
           onClose={() => setSettingsOpen(false)}
         />
+      )}
+
+      {inviteOpen && (
+        <Sheet title="Invite friends" onClose={() => setInviteOpen(false)}>
+          <div className="invite-sheet">
+            <p className="mono muted small">share the code or link — friends join this room</p>
+            <button type="button" className="invite-code" onClick={() => copy(id, 'Code copied')} aria-label="Copy room code">{id}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg></button>
+            <div className="invite-actions">
+              <button type="button" className="btn primary" onClick={share}>Share invite</button>
+              <button type="button" className="btn ghost" onClick={() => copy(inviteUrl, 'Link copied')}>Copy link</button>
+            </div>
+          </div>
+        </Sheet>
       )}
 
       {camera && <Camera initialMode="photo" photoOnly onClose={() => setCamera(null)} onDone={photoTaken} />}
@@ -420,7 +434,7 @@ export default function Room({ api, user, id }) {
         />
       )}
 
-      {isCurrent && mine.length < target && !placing && !noteOpen && !myGoalOpen && !bloom && !camera && !settingsOpen && !personUid && (
+      {isCurrent && mine.length < target && !placing && !noteOpen && !myGoalOpen && !bloom && !camera && !settingsOpen && !inviteOpen && !personUid && (
         <SnapBar open={snapOpen} setOpen={setSnapOpen} onPhoto={() => setCamera('photo')} onNote={() => setNoteOpen(true)} buttonRef={snapRef} />
       )}
 
@@ -444,7 +458,7 @@ export default function Room({ api, user, id }) {
 }
 
 // 방 설정: 방장은 방 이름과 골을 바꿀 수 있고, 다른 멤버는 보기만
-function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare, onClose }) {
+function SettingsSheet({ api, room, isOwner, me, onClose }) {
   const [name, setName] = useState(room.name)
   const [goals, setGoals] = useState(() => goalsOf(room).map((g) => ({ ...g })))
   const [hosts, setHosts] = useState(() => hostsOf(room))
@@ -515,16 +529,6 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
           ? <button className="btn primary block" disabled={busy || !trimmed || !clean.length}>{busy ? 'Saving…' : 'Save'}</button>
           : <p className="mono muted center">only hosts can change room settings</p>}
       </form>
-      <section className="invite-box">
-        <div className="invite-row">
-          <p className="mono muted">invite friends</p>
-          <button type="button" className="invite-code" onClick={onCopyCode} aria-label="Copy room code">{room.id}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg></button>
-        </div>
-        <div className="invite-actions">
-          <button type="button" className="btn primary" onClick={onShare}>Share invite</button>
-          <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
-        </div>
-      </section>
       {isCreator && (
         <section className={`danger-zone ${confirmDelete ? 'confirm' : ''}`}>
           {!confirmDelete ? (
@@ -542,6 +546,17 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
         </section>
       )}
     </Sheet>
+  )
+}
+
+// 친구 초대 아이콘 (사람 + 플러스)
+function InviteIcon({ size = 20 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <circle cx="9.5" cy="8" r="3.5" />
+      <path d="M3 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
+      <path d="M19 8v6M16 11h6" />
+    </svg>
   )
 }
 
