@@ -551,14 +551,12 @@ function SettingsSheet({ api, room, isOwner, me, onClose }) {
   )
 }
 
-// 친구 초대 아이콘 (QR 코드)
+// 친구 초대 아이콘 (스캔 프레임)
 function InviteIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.6" />
-      <rect x="14" y="3.5" width="6.5" height="6.5" rx="1.6" />
-      <rect x="3.5" y="14" width="6.5" height="6.5" rx="1.6" />
-      <path d="M14 14h2.5v2.5M20.5 14v.01M14 20.5h.01M17.5 20.5h3v-3" />
+      <path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16" />
+      <path d="M7 12h10" />
     </svg>
   )
 }
