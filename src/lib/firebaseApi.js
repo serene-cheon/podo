@@ -30,10 +30,13 @@ export function createFirebaseApi(config) {
     localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   })
   const storage = getStorage(app)
-  storage.maxUploadRetryTime = 15000 // Storage 가 없을 때 오래 붙잡혀 있지 않게
+  storage.maxUploadRetryTime = 4000 // Storage 가 없을 때 오래 붙잡혀 있지 않게
   const authCbs = new Set() // 닉네임을 바꾸면 화면에 바로 반영하려고
   let profile = {} // users/{uid}: { name, photo }
-  let storageOk = true // Storage 가 없으면 한 번 실패 후 계속 인라인 저장
+  // Storage 가 없으면 한 번 실패 후 계속 인라인 저장 (하루 동안 기억해서 매번 기다리지 않게)
+  const NO_STORAGE = 'podo-no-storage'
+  let storageOk = true
+  try { storageOk = !(Date.now() - Number(localStorage.getItem(NO_STORAGE) || 0) < 864e5) } catch { /* 저장소 막힘 */ }
 
 
   return {
@@ -162,6 +165,7 @@ export function createFirebaseApi(config) {
           } catch (e) {
             console.warn('Storage upload failed, saving photo inline instead', e)
             storageOk = false
+            try { localStorage.setItem(NO_STORAGE, String(Date.now())) } catch { /* 저장소 막힘 */ }
             mediaPath = null
           }
         }

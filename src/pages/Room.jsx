@@ -44,6 +44,7 @@ export default function Room({ api, user, id }) {
   const [snapOpen, setSnapOpen] = useState(false)
   const [placing, setPlacing] = useState(null) // { blob, url, from }
   const [hot, setHot] = useState(null) // 손가락 아래 빈 칸
+  const [pending, setPending] = useState([]) // 저장 중인 포도알: 놓는 즉시 칸에 붙어 보이게
 
   useEffect(() => api.watchRoom(id, setRoom), [api, id])
   useEffect(() => api.watchCheckins(id, week, (list) => setData({ week, list })), [api, id, week])
@@ -88,14 +89,15 @@ export default function Room({ api, user, id }) {
   // 골별 → 사람별 체크인 (시간순)
   const byGoal = useMemo(() => {
     const m = {}
-    const list = data.week === week ? data.list : []
-    for (const c of [...list].sort((a, b) => a.createdAt - b.createdAt)) {
+    const saved = data.week === week ? data.list : []
+    const list = [...saved, ...pending.filter((p) => p.week === week && !saved.some((c) => c.uid === p.uid && c.goalId === p.goalId && c.slot === p.slot))]
+    for (const c of list.sort((a, b) => a.createdAt - b.createdAt)) {
       const gid = goalIdOf(c, goals)
       if (!gid) continue
       ;((m[gid] ||= {})[c.uid] ||= []).push(c)
     }
     return m
-  }, [data, week, goals])
+  }, [data, week, goals, pending])
   const byUser = byGoal[goal.id] || {}
   const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, tOf(user.uid, g))
   // 다른 골의 팀 송이 (옆 송이 / 뒤 카드에 작게)
@@ -153,11 +155,20 @@ export default function Room({ api, user, id }) {
   }
   async function placeAt(slot) {
     const p = placing
-    if (p.blob) await add({ blob: p.blob, mediaType: 'photo', note: '', slot })
-    else await add({ note: p.note, slot })
-    if (p.url) URL.revokeObjectURL(p.url)
+    // 칸에 쏙 들어가는 애니메이션이 끝나면 바로 진짜 포도알로 바꿔 붙임 (저장은 뒤에서)
+    await new Promise((r) => setTimeout(r, 480))
+    const tmp = {
+      id: `pending-${Date.now()}`, uid: user.uid, week: thisWeek, goalId: goal.id, slot,
+      createdAt: Date.now(), mediaType: p.blob ? 'photo' : null, mediaUrl: p.url || null, note: p.blob ? '' : p.note, pending: true,
+    }
+    setPending((ps) => [...ps, tmp])
     setPlacing(null)
     setHot(null)
+    add(p.blob ? { blob: p.blob, mediaType: 'photo', note: '', slot } : { note: p.note, slot })
+      .finally(() => {
+        setPending((ps) => ps.filter((x) => x.id !== tmp.id))
+        if (p.url) setTimeout(() => URL.revokeObjectURL(p.url), 10000)
+      })
   }
   function discard() {
     if (placing?.url) URL.revokeObjectURL(placing.url)
@@ -166,6 +177,7 @@ export default function Room({ api, user, id }) {
   }
 
   async function remove(c) {
+    if (c.pending) return
     if (!confirm('Remove this grape?')) return
     setBloom(null)
     try { await api.deleteCheckin(id, c) } catch (e) { toast('Failed: ' + (e.message || e)) }
