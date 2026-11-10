@@ -350,10 +350,11 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       </defs>
 
       {modern ? (
-        // 모던: 깔끔한 직선 줄기 + 작은 잎
+        // 모던: 짧고 통통하게 휜 줄기 + 원 두 개를 겹친 기하학 잎 (반쪽만 진하게)
         <g>
-          <path d={`M${cx} 8 V${TOP - 4}`} stroke="#17151C" strokeWidth="1.6" strokeLinecap="round" />
-          <path d={`M${cx + 1} 20 C${cx + 10} 10 ${cx + 24} 10 ${cx + 30} 15 C${cx + 22} 24 ${cx + 10} 25 ${cx + 1} 20Z`} fill="#8FCBA9" />
+          <path d={`M${cx} ${TOP - 1} C${cx} ${TOP - 15} ${cx + 1} ${TOP - 23.5} ${cx + 4.7} ${TOP - 29.4}`} stroke="#5B4636" strokeWidth="4.1" strokeLinecap="round" fill="none" />
+          <path d={`M${cx + 3.5} ${TOP - 27} A20 20 0 0 1 ${cx + 32.9} ${TOP - 43.5} A20 20 0 0 1 ${cx + 3.5} ${TOP - 27}Z`} fill="#8ACB9E" />
+          <path d={`M${cx + 3.5} ${TOP - 27} A20 20 0 0 1 ${cx + 32.9} ${TOP - 43.5}Z`} fill="#6FB98A" />
         </g>
       ) : (
       <>
