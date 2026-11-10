@@ -106,7 +106,6 @@ function MyBunch({ api, user, rooms }) {
   const filled = allGoals
     .flatMap((x) => mineOf(x).map((c) => { colorById[c.id] = x.goal.color; return c }))
     .sort((a, b) => a.createdAt - b.createdAt)
-  const doneGoals = allGoals.filter((x) => mineOf(x).length >= targetFor(x.room, x.goal, user.uid)).length
   const left = daysLeft(week)
   const complete = total > 0 && filled.length >= total
   // 누르면 커지고, 떼면 펼쳐지는 포도알 (방 화면과 같은 인터랙션)
@@ -134,7 +133,6 @@ function MyBunch({ api, user, rooms }) {
         onPressEnd={pressEnd}
         hiddenId={bloom?.c.id}
       />
-      <p className="mono muted">{doneGoals} of {allGoals.length} {allGoals.length === 1 ? 'goal' : 'goals'} done</p>
       {bloom && (
         <Bloom
           key={bloom.c.id}
