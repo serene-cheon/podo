@@ -228,6 +228,10 @@ export default function Room({ api, user, id }) {
     .flatMap((m) => (byUser[m.uid] || []).slice(0, tOf(m.uid)))
     .sort((a, b) => a.createdAt - b.createdAt)
 
+  // 방이 만들어진 주보다 이전으로는 못 넘어가게 (예전 방처럼 만든 날짜가 없으면 제한 없음)
+  const createdMs = typeof room.createdAt === 'number' ? room.createdAt : room.createdAt?.toMillis?.()
+  const firstWeek = createdMs ? weekKey(new Date(createdMs)) : ''
+
   return (
     <main className="page room">
       <header className="topbar">
@@ -257,7 +261,7 @@ export default function Room({ api, user, id }) {
       )}
 
       <nav className="week-nav">
-        <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} aria-label="Previous week">‹</button>
+        <button className="icon-btn" onClick={() => setWeek(shiftWeek(week, -1))} disabled={week <= firstWeek} aria-label="Previous week">‹</button>
         <span className="week-now">
           <span className="week-range">{weekLabel(week)}</span>
           {isCurrent
