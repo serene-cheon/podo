@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
 import Sheet from '../components/Sheet.jsx'
+import QRCode from '../components/QRCode.jsx'
 import Camera from '../components/Camera.jsx'
 import Bloom from '../components/Bloom.jsx'
 import GrapeLoader from '../components/GrapeLoader.jsx'
@@ -407,7 +408,8 @@ export default function Room({ api, user, id }) {
       {inviteOpen && (
         <Sheet title="Invite friends" onClose={() => setInviteOpen(false)}>
           <div className="invite-sheet">
-            <p className="mono muted small">share the code or link — friends join this room</p>
+            <div className="invite-qr"><QRCode value={inviteUrl} size={176} /></div>
+            <p className="mono muted small">scan to join, or share the code / link</p>
             <button type="button" className="invite-code" onClick={() => copy(id, 'Code copied')} aria-label="Copy room code">{id}<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg></button>
             <div className="invite-actions">
               <button type="button" className="btn primary" onClick={share}>Share invite</button>
@@ -549,13 +551,14 @@ function SettingsSheet({ api, room, isOwner, me, onClose }) {
   )
 }
 
-// 친구 초대 아이콘 (사람 + 플러스)
+// 친구 초대 아이콘 (QR 코드)
 function InviteIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="9.5" cy="8" r="3.5" />
-      <path d="M3 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6" />
-      <path d="M19 8v6M16 11h6" />
+      <rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.6" />
+      <rect x="14" y="3.5" width="6.5" height="6.5" rx="1.6" />
+      <rect x="3.5" y="14" width="6.5" height="6.5" rx="1.6" />
+      <path d="M14 14h2.5v2.5M20.5 14v.01M14 20.5h.01M17.5 20.5h3v-3" />
     </svg>
   )
 }
