@@ -57,7 +57,7 @@ export default function Home({ api, user }) {
             <p className="mono">tap + to create a room or join with a code</p>
           </div>
         )}
-        {rooms?.length > 0 && <h2 className="label-mono">my challenges</h2>}
+        {rooms?.length > 0 && <h2 className="label-mono">podo crew</h2>}
         {rooms?.map((r) => (
           <a key={r.id} className="room-card" href={`#/room/${r.id}`}>
             <div className="room-info">
