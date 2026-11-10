@@ -529,3 +529,12 @@ html, body { overflow-x: clip; }
 .brand-logo .logo { display: block; }
 .logo-podo { fill: #6E48C9; }
 .logo-it { fill: #BBA5EE; }
+
+/* 방 삭제 */
+.danger-zone { margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.danger-link { border: 0; background: none; color: var(--danger); font-size: 15px; padding: 10px 14px; }
+.danger-zone.confirm { align-items: stretch; text-align: left; border: 1.5px solid color-mix(in srgb, var(--danger) 35%, transparent); background: color-mix(in srgb, var(--danger) 5%, #fff); border-radius: 18px; padding: 16px; animation: up .22s cubic-bezier(.2,.9,.3,1.1); }
+.danger-title { font-weight: 600; font-size: 16px; color: var(--ink); }
+.danger-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.danger-actions .btn { padding: 12px 10px; }
+.btn.danger-solid { background: var(--danger); color: #fff; border: 0; }

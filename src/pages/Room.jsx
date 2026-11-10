@@ -449,6 +449,20 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
   const [goals, setGoals] = useState(() => goalsOf(room).map((g) => ({ ...g })))
   const [hosts, setHosts] = useState(() => hostsOf(room))
   const [busy, setBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const isCreator = room.ownerId === me
+  async function deleteRoom() {
+    setDeleting(true)
+    try {
+      await api.deleteRoom(room.id)
+      toast(`Deleted “${room.name}”`)
+      location.hash = '#/'
+    } catch (err) {
+      toast('Could not delete: ' + (err.message || err))
+      setDeleting(false)
+    }
+  }
   const toggleHost = (uid) => setHosts((h) => (h.includes(uid) ? (h.length > 1 ? h.filter((x) => x !== uid) : h) : [...h, uid]))
   const trimmed = name.trim()
   const clean = cleanGoals(goals)
@@ -511,6 +525,22 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
           <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
         </div>
       </section>
+      {isCreator && (
+        <section className={`danger-zone ${confirmDelete ? 'confirm' : ''}`}>
+          {!confirmDelete ? (
+            <button type="button" className="danger-link" onClick={() => setConfirmDelete(true)}>Delete room</button>
+          ) : (
+            <>
+              <p className="danger-title">Delete “{room.name}” for everyone?</p>
+              <p className="mono muted small">All grapes, photos and notes in this room will be gone. This can't be undone.</p>
+              <div className="danger-actions">
+                <button type="button" className="btn ghost" onClick={() => setConfirmDelete(false)} disabled={deleting}>Cancel</button>
+                <button type="button" className="btn danger-solid" onClick={deleteRoom} disabled={deleting}>{deleting ? 'Deleting…' : 'Delete'}</button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
     </Sheet>
   )
 }

@@ -108,6 +108,19 @@ export function createFirebaseApi(config) {
       await updateDoc(doc(db, 'rooms', roomId), fields)
     },
 
+    // 방 삭제 (만든 사람만): 기록들 먼저 지우고 방 문서 삭제
+    async deleteRoom(roomId) {
+      const snap = await getDocs(collection(db, 'rooms', roomId, 'checkins'))
+      const docs = snap.docs
+      for (let i = 0; i < docs.length; i += 400) {
+        const batch = writeBatch(db)
+        docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref))
+        await batch.commit()
+      }
+      docs.forEach((d) => { const p = d.data().mediaPath; if (p) deleteObject(ref(storage, p)).catch(() => {}) })
+      await deleteDoc(doc(db, 'rooms', roomId))
+    },
+
     async createRoom(user, { name, goals }) {
       for (let tries = 0; tries < 5; tries++) {
         const id = makeRoomCode()

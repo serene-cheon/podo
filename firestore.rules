@@ -47,6 +47,9 @@ service cloud.firestore {
         && request.resource.data.goals.size() >= 1
         && request.resource.data.goals.size() <= 5;
 
+      // 방 삭제: 만든 사람만
+      allow delete: if signedIn() && resource.data.ownerId == me();
+
       // 닉네임 변경: 멤버는 members 안의 내 정보만 수정 가능
       allow update: if signedIn()
         && me() in resource.data.memberIds
@@ -75,7 +78,9 @@ service cloud.firestore {
           && request.resource.data.week is string
           && request.resource.data.createdAt == request.time
           && request.resource.data.note.size() <= 60;
-        allow delete: if signedIn() && resource.data.uid == me();
+        // 내 기록, 또는 방을 지우는 방장이 모든 기록
+        allow delete: if signedIn() && (resource.data.uid == me()
+          || get(/databases/$(database)/documents/rooms/$(roomId)).data.ownerId == me());
       }
     }
   }

@@ -77,6 +77,12 @@ export default {
     save()
   },
 
+  async deleteRoom(roomId) {
+    delete db.rooms[roomId]
+    db.checkins = db.checkins.filter((c) => c.roomId !== roomId)
+    save()
+  },
+
   watchMyRooms: (me, cb) => sub(() =>
     cb(Object.values(db.rooms).filter((r) => r.memberIds.includes(me)).sort((a, b) => b.createdAt - a.createdAt))),
 
