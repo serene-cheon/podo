@@ -122,7 +122,9 @@ input { font: inherit; }
 .backdrop { position: fixed; inset: 0; background: rgba(23,21,28,.3); display: flex; align-items: flex-end; justify-content: center; z-index: 20; animation: fade .2s; }
 .sheet { background: var(--card); width: 100%; max-width: 480px; border-radius: 26px 26px 0 0; padding: 10px 20px calc(env(safe-area-inset-bottom) + 22px); animation: up .25s cubic-bezier(.2,.9,.3,1.1); }
 .sheet h2 { font-size: 24px; margin: 8px 0 16px; }
-.sheet-handle { width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 6px; }
+.sheet-handle { width: 40px; height: 5px; border-radius: 5px; background: var(--line); margin: 0 auto 6px; }
+.sheet-grab { touch-action: none; cursor: grab; margin: -10px -20px 0; padding: 10px 20px 0; user-select: none; -webkit-user-select: none; }
+.sheet-grab:active { cursor: grabbing; }
 .form { display: flex; flex-direction: column; gap: 14px; }
 .form label, .label { display: flex; flex-direction: column; gap: 6px; font-family: var(--sans); font-size: 14px; color: var(--muted); }
 .form input, .note-input { border: 1.5px solid var(--line); border-radius: 14px; padding: 13px 14px; font-size: 16px; background: #fff; color: var(--ink); outline: none; width: 100%; font-family: var(--sans); }
@@ -260,7 +262,7 @@ input { font: inherit; }
 .chips.small button { max-width: 34px; font-size: 14px; }
 .chips.small .mono { margin-left: 4px; white-space: nowrap; font-size: 13px; }
 .add-goal { align-self: flex-start; padding-left: 2px; }
-.sheet { max-height: 92dvh; overflow-y: auto; }
+.sheet { max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain; }
 /* goal tabs: 이름만, 심플하게 */
 .goal-tabs { display: flex; gap: 18px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 4px 18px 2px; }
 .goal-tabs::-webkit-scrollbar { display: none; }
