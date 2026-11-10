@@ -352,9 +352,10 @@ export default function GrapeCluster({ target, checkins, size = 1, maxWidth, can
       {modern ? (
         // 모던: 짧고 통통하게 휜 줄기 + 원 두 개를 겹친 기하학 잎 (반쪽만 진하게)
         <g>
-          <path d={`M${cx} ${TOP - 1} C${cx} ${TOP - 15} ${cx + 1} ${TOP - 23.5} ${cx + 4.7} ${TOP - 29.4}`} stroke="#5B4636" strokeWidth="4.1" strokeLinecap="round" fill="none" />
-          <path d={`M${cx + 3.5} ${TOP - 27} A20 20 0 0 1 ${cx + 32.9} ${TOP - 43.5} A20 20 0 0 1 ${cx + 3.5} ${TOP - 27}Z`} fill="#8ACB9E" />
-          <path d={`M${cx + 3.5} ${TOP - 27} A20 20 0 0 1 ${cx + 32.9} ${TOP - 43.5}Z`} fill="#6FB98A" />
+          {/* 잎은 줄기 끝 옆에서 시작해서 줄기를 덮지 않게, 줄기는 위에 그림 */}
+          <path d={`M${cx + 5.2} ${TOP - 22.6} A20 20 0 0 1 ${cx + 34.6} ${TOP - 39.1} A20 20 0 0 1 ${cx + 5.2} ${TOP - 22.6}Z`} fill="#8ACB9E" />
+          <path d={`M${cx + 5.2} ${TOP - 22.6} A20 20 0 0 1 ${cx + 34.6} ${TOP - 39.1}Z`} fill="#6FB98A" />
+          <path d={`M${cx} ${TOP - 1} C${cx} ${TOP - 11} ${cx + 0.8} ${TOP - 17.5} ${cx + 3.4} ${TOP - 22}`} stroke="#5B4636" strokeWidth="4.1" strokeLinecap="round" fill="none" />
         </g>
       ) : (
       <>
