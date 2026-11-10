@@ -100,14 +100,6 @@ export default function Room({ api, user, id }) {
   }, [data, week, goals, pending])
   const byUser = byGoal[goal.id] || {}
   const myCount = (g) => Math.min(byGoal[g.id]?.[user.uid]?.length || 0, tOf(user.uid, g))
-  // 다른 골의 팀 송이 (옆 송이 / 뒤 카드에 작게)
-  const miniBunch = (g, size) => {
-    const by = byGoal[g.id] || {}
-    const tot = members.reduce((acc, m) => acc + targetFor(room, g, m.uid), 0)
-    const filled = members.flatMap((m) => (by[m.uid] || []).slice(0, targetFor(room, g, m.uid))).sort((a, b) => a.createdAt - b.createdAt)
-    return <GrapeCluster key={g.id} target={tot} color={g.color} checkins={filled} size={size} slotted meUid={user.uid} />
-  }
-
   const total = members.reduce((s, m) => s + tOf(m.uid), 0)
   const done = members.reduce((s, m) => s + Math.min(byUser[m.uid]?.length || 0, tOf(m.uid)), 0)
   const myDone = Math.min(byUser[user.uid]?.length || 0, target)
@@ -282,13 +274,7 @@ export default function Room({ api, user, id }) {
             <span className="me"><small>me</small><b>{myDone}</b>/{target}</span>
           </div>
         </div>
-        <div className={`goal-stage ${goals.length > 1 ? 'view-peek' : ''}`}>
-          {goals.length > 1 && goalIdx > 0 && (
-            <button className="peek peek-left" onClick={() => goTo(goalIdx - 1)} aria-label={`Previous goal: ${goals[goalIdx - 1].title}`}>{miniBunch(goals[goalIdx - 1], GRAPE_SCALE * 0.55)}</button>
-          )}
-          {goals.length > 1 && goalIdx < goals.length - 1 && (
-            <button className="peek peek-right" onClick={() => goTo(goalIdx + 1)} aria-label={`Next goal: ${goals[goalIdx + 1].title}`}>{miniBunch(goals[goalIdx + 1], GRAPE_SCALE * 0.55)}</button>
-          )}
+        <div className="goal-stage">
         <div key={goal.id} className={`stage-main ${dir > 0 ? 'from-right' : dir < 0 ? 'from-left' : ''}`}>
         <GrapeCluster
           target={total}
@@ -312,8 +298,12 @@ export default function Room({ api, user, id }) {
         </div>
         </div>
         {goals.length > 1 && (
-          <div className="page-dots" aria-hidden>
-            {goals.map((g, i) => <i key={g.id} className={i === goalIdx ? 'on' : ''} style={{ background: i === goalIdx ? colorOf(g.color).me[1] : undefined }} />)}
+          <div className="page-dots">
+            {goals.map((g, i) => (
+              <button type="button" key={g.id} className={i === goalIdx ? 'on' : ''} onClick={() => goTo(i)} aria-label={`Goal ${i + 1}: ${g.title}`} aria-current={i === goalIdx}>
+                <i style={{ background: i === goalIdx ? colorOf(g.color).me[1] : undefined }} />
+              </button>
+            ))}
           </div>
         )}
         {total > 0 && (done >= total || !isCurrent) && (

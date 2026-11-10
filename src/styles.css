@@ -268,7 +268,8 @@ input { font: inherit; }
 .goal-tab i { width: 9px; height: 9px; border-radius: 50%; background: var(--gc); opacity: .45; }
 .goal-tab.on { color: var(--ink); border-bottom-color: var(--gc); }
 .goal-tab.on i { opacity: 1; }
-.page-dots { display: flex; gap: 6px; }
+.page-dots { display: flex; gap: 0; }
+.page-dots button { border: 0; background: none; padding: 8px 4px; display: flex; }
 .page-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background .2s; }
 .team-bunch { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
 .slide-left { animation: slideL .32s cubic-bezier(.2,.8,.3,1); }
@@ -504,7 +505,7 @@ button.member:active { background: var(--grape-soft); }
 @keyframes menuin { from { opacity: 0; transform: scale(.92) translateY(-4px); } }
 .top-actions { display: flex; align-items: center; gap: 6px; }
 
-/* ── 여러 골: peek / stack ── */
+/* ── 여러 골: 넘기기 ── */
 .goal-stage { position: relative; width: 100%; display: flex; justify-content: center; }
 .stage-main { position: relative; z-index: 2; display: flex; justify-content: center; }
 .stage-main.from-right { animation: stageR .42s cubic-bezier(.32,.72,0,1); }
@@ -512,12 +513,6 @@ button.member:active { background: var(--grape-soft); }
 @keyframes stageR { from { transform: translateX(60px); opacity: 0; } }
 @keyframes stageL { from { transform: translateX(-60px); opacity: 0; } }
 
-/* peek: 양옆에 작고 흐린 송이 */
-.view-peek { overflow: clip; margin: 0 -18px; width: calc(100% + 36px); padding: 0 18px; }
-.peek { position: absolute; top: 50%; z-index: 1; border: 0; background: none; padding: 0; opacity: .45; filter: saturate(.85); transition: opacity .2s; }
-.peek:active { opacity: .6; }
-.peek-left { left: 0; transform: translate(-42%, -50%); }
-.peek-right { right: 0; transform: translate(42%, -50%); }
 html, body { overflow-x: clip; }
 
 @keyframes stick { 0% { transform: scale(1.18); } 35% { transform: scale(.9, 1.06); } 60% { transform: scale(1.04, .97); } 100% { transform: none; } }
