@@ -468,19 +468,6 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
   }
   return (
     <Sheet title="Settings" onClose={onClose}>
-      <section className="invite-box">
-        <div className="invite-row">
-          <div>
-            <p className="mono muted">invite friends</p>
-            <button type="button" className="invite-code" onClick={onCopyCode} aria-label="Copy room code">{room.id}</button>
-          </div>
-          <span className="mono muted small">tap code to copy</span>
-        </div>
-        <div className="invite-actions">
-          <button type="button" className="btn primary" onClick={onShare}>Share invite</button>
-          <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
-        </div>
-      </section>
       <form className="form" onSubmit={save}>
         <label>room name
           <input value={name} onChange={(e) => setName(e.target.value)} maxLength={30} required disabled={!isOwner} />
@@ -512,6 +499,16 @@ function SettingsSheet({ api, room, isOwner, me, onCopyCode, onCopyLink, onShare
           ? <button className="btn primary block" disabled={busy || !trimmed || !clean.length}>{busy ? 'Saving…' : 'Save'}</button>
           : <p className="mono muted center">only hosts can change room settings</p>}
       </form>
+      <section className="invite-box">
+        <div className="invite-row">
+          <p className="mono muted">invite friends</p>
+          <button type="button" className="invite-code" onClick={onCopyCode} aria-label="Copy room code">{room.id}<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="9" y="9" width="12" height="12" rx="2.5" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg></button>
+        </div>
+        <div className="invite-actions">
+          <button type="button" className="btn primary" onClick={onShare}>Share invite</button>
+          <button type="button" className="btn ghost" onClick={onCopyLink}>Copy link</button>
+        </div>
+      </section>
     </Sheet>
   )
 }
