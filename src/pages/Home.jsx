@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Logo from '../components/Logo.jsx'
 import GrapeCluster, { GRAPE_SCALE, grapeMaxWidth } from '../components/GrapeCluster.jsx'
 import Avatar from '../components/Avatar.jsx'
+import QRScanner from '../components/QRScanner.jsx'
 import Sheet from '../components/Sheet.jsx'
 import { toast } from '../components/Toast.jsx'
 import { normalizeCode } from '../lib/code.js'
@@ -18,6 +19,7 @@ export default function Home({ api, user }) {
   const [rooms, setRooms] = useState(null)
   const [sheet, setSheet] = useState(null) // 'create' | 'join' | 'profile'
   const [menuOpen, setMenuOpen] = useState(false)
+  const scanned = useCallback((code) => { setSheet(null); location.hash = `#/join/${code}` }, [])
   useEffect(() => api.watchMyRooms(user.uid, setRooms), [api, user.uid])
 
   return (
@@ -35,6 +37,7 @@ export default function Home({ api, user }) {
                 <div className="add-menu" role="menu">
                   <button role="menuitem" onClick={() => { setMenuOpen(false); setSheet('create') }}>Create new room</button>
                   <button role="menuitem" onClick={() => { setMenuOpen(false); setSheet('join') }}>Join with code</button>
+                  <button role="menuitem" onClick={() => { setMenuOpen(false); setSheet('scan') }}>Scan QR to join</button>
                 </div>
               </>
             )}
@@ -78,6 +81,7 @@ export default function Home({ api, user }) {
 
       {sheet === 'create' && <CreateSheet api={api} user={user} onClose={() => setSheet(null)} />}
       {sheet === 'join' && <JoinSheet onClose={() => setSheet(null)} />}
+      {sheet === 'scan' && <QRScanner onClose={() => setSheet(null)} onCode={scanned} />}
       {sheet === 'profile' && <ProfileSheet api={api} user={user} onClose={() => setSheet(null)} />}
     </main>
   )

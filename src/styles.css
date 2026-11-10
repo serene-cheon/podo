@@ -550,3 +550,13 @@ html, body { overflow-x: clip; }
 .invite-sheet .invite-code svg { color: var(--muted); }
 .invite-sheet .invite-actions { width: 100%; }
 .invite-qr { padding: 10px; background: #fff; border: 1.5px solid var(--line); border-radius: 22px; line-height: 0; }
+
+/* QR 스캔 */
+.qr-scan .cam-stage video { width: 100%; height: 100%; object-fit: cover; }
+.scan-frame { position: absolute; width: min(68vw, 280px); aspect-ratio: 1; pointer-events: none; box-shadow: 0 0 0 100vmax rgba(0,0,0,.45); border-radius: 28px; }
+.scan-frame i { position: absolute; width: 44px; height: 44px; border: 4px solid #fff; }
+.scan-frame i:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 28px; }
+.scan-frame i:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 28px; }
+.scan-frame i:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 28px; }
+.scan-frame i:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 28px; }
+.scan-text { text-align: center; font-size: 15px; padding: 18px 20px 6px; color: rgba(255,255,255,.9); }
