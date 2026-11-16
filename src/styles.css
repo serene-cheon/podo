@@ -534,7 +534,7 @@ html, body { overflow-x: clip; }
 @keyframes ring { from { transform: scale(.9); opacity: .55; } to { transform: scale(1.45); opacity: 0; } }
 /* 사진 포도알: 정사각형 뷰파인더 (찍히는 범위 그대로) */
 .cam-stage.square { flex: 1; }
-.cam-stage.square > video, .cam-stage.square > img { width: calc(100% - 24px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 34px; }
+.cam-stage.square > video, .cam-stage.square > img, .cam-stage.square > .photo-edit { width: calc(100% - 24px); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 34px; }
 
 /* 워드마크 로고 (보라) */
 .brand-logo { display: inline-flex; align-items: center; margin: 0; line-height: 0; color: #6E48C9; }
@@ -584,3 +584,14 @@ html, body { overflow-x: clip; }
 .week-today.back { border: 0; background: none; padding: 0; color: #9A95A3; font-family: inherit; }
 .week-nav .icon-btn { color: #6E6977; }
 .week-nav .icon-btn:disabled { color: #D3CFD9; opacity: 1; }
+
+/* 사진 위 글씨 */
+.photo-edit { position: relative; overflow: hidden; container-type: inline-size; display: flex; align-items: center; justify-content: center; cursor: text; }
+.photo-edit > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.photo-edit::after { content: ''; position: absolute; inset: 0; background: rgba(0,0,0,0); transition: background .2s; pointer-events: none; }
+.photo-edit.editing::after { background: rgba(0,0,0,.28); }
+.photo-text { position: relative; z-index: 1; width: 84%; margin: 0; padding: 0; border: 0; outline: none; resize: none; overflow: hidden; background: transparent; color: #fff; caret-color: #B79BFF; text-align: center;
+  font: 600 7.5cqw/1.2 'Inter Tight', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; text-shadow: 0 .04em .35em rgba(0,0,0,.38); word-break: keep-all; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; }
+.photo-edit:not(.editing) .photo-text { pointer-events: none; }
+.photo-text-hint { position: absolute; z-index: 1; bottom: 14px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.42); color: #fff; font-size: 13px; padding: 7px 12px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+.cam-done { position: absolute; top: calc(env(safe-area-inset-top) + 10px); right: 12px; z-index: 3; background: #fff; color: #17151C; border: 0; height: 36px; padding: 0 16px; border-radius: 999px; font-size: 15px; font-weight: 600; }
