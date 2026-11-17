@@ -37,6 +37,7 @@ export default function Room({ api, user, id }) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [myGoalOpen, setMyGoalOpen] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const bunchRef = useRef(null)
   const [goalPick, setGoalPick] = useState(null)
   const [personUid, setPersonUid] = useState(null) // 개별 포도송이 보기
@@ -182,6 +183,7 @@ export default function Room({ api, user, id }) {
   // 한 주 포도송이를 이미지로 저장
   async function saveWeek() {
     setSaving(true)
+    toast('Making image…')
     try {
       const blob = await makeWeekImage({
         svgEl: bunchRef.current.querySelector('svg.cluster'),
@@ -286,6 +288,24 @@ export default function Room({ api, user, id }) {
           <div className="counts">
             <span><small>team</small><b>{done}</b>/{total}</span>
             <span className="me"><small>me</small><b>{myDone}</b>/{target}</span>
+            {total > 0 && (
+              <span className="export-wrap">
+                <button type="button" className={`export-btn ${exportOpen ? 'open' : ''}`} onClick={() => setExportOpen((o) => !o)} aria-label="Export" aria-expanded={exportOpen}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5" /><path d="M8 11H6.5A2.5 2.5 0 0 0 4 13.5v5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-5a2.5 2.5 0 0 0-2.5-2.5H16" /></svg>
+                </button>
+                {exportOpen && (
+                  <>
+                    <span className="add-menu-back" onClick={() => setExportOpen(false)} />
+                    <span className="add-menu export-menu" role="menu">
+                      <button role="menuitem" onClick={() => { setExportOpen(false); saveWeek() }} disabled={saving}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden><rect x="3.5" y="3.5" width="17" height="17" rx="4" /><circle cx="9" cy="9.5" r="1.8" /><path d="m20 16-4.5-4.5L7 20" /></svg>
+                        Save as image
+                      </button>
+                    </span>
+                  </>
+                )}
+              </span>
+            )}
           </div>
         </div>
         <div className="goal-stage">
@@ -319,11 +339,6 @@ export default function Room({ api, user, id }) {
               </button>
             ))}
           </div>
-        )}
-        {total > 0 && (done >= total || !isCurrent) && (
-          <button className="btn ghost save-img" onClick={saveWeek} disabled={saving}>
-            {saving ? 'Making image…' : 'Save as image ↓'}
-          </button>
         )}
       </section>
 
